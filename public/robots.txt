@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /gift/
+Disallow: /admin/
+
+# أضف رابط Sitemap مطلقاً بعد ضبط PUBLIC_SITE_URL على النطاق الحقيقي.
