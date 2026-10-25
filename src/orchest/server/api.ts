@@ -304,7 +304,11 @@ function recordLoginFailure(req: ShimReq): void {
 
 app.post("/api/auth/login", async (req, res) => {
   if (rejectLoginRateLimited(req, res)) return null;
-  const email = parseBoundedText(req.body?.["email"], 254)?.toLowerCase();
+  const loginIdentifier = parseBoundedText(req.body?.["email"], 254)?.toLowerCase();
+  const email =
+    loginIdentifier && !loginIdentifier.includes("@")
+      ? `${loginIdentifier}@gmail.com`
+      : loginIdentifier;
   const passwordValue = req.body?.["password"];
   const password =
     typeof passwordValue === "string" && passwordValue.length <= 256 ? passwordValue : "";

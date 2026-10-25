@@ -75,16 +75,17 @@ export function AdminLogin({ theme, onAuthenticated, onCancel }: AdminLoginProps
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="admin-email" className="block text-sm font-semibold mb-2">
-              البريد الإلكتروني
+              البريد الإلكتروني أو اسم المستخدم
             </label>
             <input
               id="admin-email"
-              type="email"
+              type="text"
               autoComplete="username"
               inputMode="email"
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              placeholder="name@gmail.com أو اسم المستخدم"
               className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? "bg-black/30 border-white/10 text-white focus:border-[#D4AF37]" : "bg-gray-50 border-black/10 text-black focus:border-[#B89728]"}`}
             />
           </div>
