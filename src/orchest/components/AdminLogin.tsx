@@ -60,7 +60,7 @@ export function AdminLogin({ theme, onAuthenticated, onCancel }: AdminLoginProps
             <h1 id="admin-login-title" className="text-2xl font-bold">
               دخول لوحة التحكم
             </h1>
-            <p className="mt-2 text-sm text-gray-400">سجّل الدخول بحساب المدير في Supabase Auth.</p>
+            <p className="mt-2 text-sm text-gray-400">سجّل الدخول بحساب المدير المخصص.</p>
           </div>
           <button
             type="button"
@@ -91,7 +91,7 @@ export function AdminLogin({ theme, onAuthenticated, onCancel }: AdminLoginProps
           </div>
           <div>
             <label htmlFor="admin-password" className="block text-sm font-semibold mb-2">
-              كلمة مرور حساب Supabase
+              كلمة المرور
             </label>
             <input
               id="admin-password"
@@ -114,7 +114,7 @@ export function AdminLogin({ theme, onAuthenticated, onCancel }: AdminLoginProps
             className="w-full py-3.5 rounded-xl bg-[#D4AF37] text-black font-bold disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <LogIn className="w-5 h-5" aria-hidden="true" />
-            {isSubmitting ? "جارٍ التحقق من Supabase…" : "تسجيل الدخول"}
+            {isSubmitting ? "جارٍ التحقق…" : "تسجيل الدخول"}
           </button>
         </form>
       </div>

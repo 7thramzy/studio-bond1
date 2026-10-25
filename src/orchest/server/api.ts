@@ -7,10 +7,10 @@ import {
   randomBytes,
   timingSafeEqual,
 } from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
 import { Buffer } from "node:buffer";
 import { app, Type, createGeminiAiClient, type ShimReq, type ShimRes } from "./shim";
 import { parseOfferDateBoundary } from "../utils/offerLogic";
+import { verifyAdminPassword } from "./adminPassword";
 
 interface CatalogTrack {
   id: string;
@@ -51,7 +51,7 @@ interface AdminSession {
   userId: string;
 }
 
-const SESSION_COOKIE = "orchest_admin_session";
+const SESSION_COOKIE = "orchest_admin_session_v2";
 const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
 
 function parseCookies(header: string | undefined): Record<string, string> {
@@ -185,7 +185,7 @@ function getAdminSession(req: ShimReq): AdminSession | null {
 function requireAdmin(req: ShimReq, res: ShimRes): AdminSession | null {
   const session = getAdminSession(req);
   if (!session) {
-    res.status(401).json({ error: "يلزم تسجيل دخول المدير عبر Supabase Auth" });
+    res.status(401).json({ error: "يلزم تسجيل دخول المدير" });
     return null;
   }
   return session;
@@ -302,62 +302,60 @@ function recordLoginFailure(req: ShimReq): void {
   current.count += 1;
 }
 
+const LOGIN_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const LOGIN_USERNAME_PATTERN = /^[a-z0-9._-]{3,64}$/;
+
 app.post("/api/auth/login", async (req, res) => {
   if (rejectLoginRateLimited(req, res)) return null;
   const loginIdentifier = parseBoundedText(req.body?.["email"], 254)?.toLowerCase();
-  const email =
-    loginIdentifier && !loginIdentifier.includes("@")
-      ? `${loginIdentifier}@gmail.com`
-      : loginIdentifier;
+  const usesEmail = loginIdentifier?.includes("@") ?? false;
+  const validIdentifier = loginIdentifier
+    ? usesEmail
+      ? LOGIN_EMAIL_PATTERN.test(loginIdentifier)
+      : LOGIN_USERNAME_PATTERN.test(loginIdentifier)
+    : false;
   const passwordValue = req.body?.["password"];
   const password =
     typeof passwordValue === "string" && passwordValue.length <= 256 ? passwordValue : "";
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !password) {
+  if (!loginIdentifier || !validIdentifier || !password) {
     recordLoginFailure(req);
     return res.status(401).json({ error: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
   }
 
-  const supabaseUrl = process.env["SUPABASE_URL"];
-  const publishableKey =
-    process.env["SUPABASE_PUBLISHABLE_KEY"] || process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
-  if (!supabaseUrl || !publishableKey)
-    return res.status(503).json({ error: "إعداد اتصال Supabase Auth غير مكتمل" });
-
   try {
-    const authClient = createClient(supabaseUrl, publishableKey, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-    });
-    const { data, error } = await authClient.auth.signInWithPassword({ email, password });
-    if (error || !data.user) {
+    const db = await adminDb();
+    const accountQuery = db
+      .from("orchest_admin_users")
+      .select("user_id,email,username,password_hash,is_active");
+    const { data: account, error: lookupError } = await (
+      usesEmail
+        ? accountQuery.eq("email", loginIdentifier)
+        : accountQuery.eq("username", loginIdentifier)
+    ).maybeSingle();
+    if (lookupError) {
+      console.error("Custom admin account lookup failed", lookupError.code);
+      return res.status(503).json({ error: "تعذر التحقق من حساب المدير حالياً" });
+    }
+
+    if (
+      !account ||
+      !account.is_active ||
+      !account.password_hash ||
+      !(await verifyAdminPassword(password, account.password_hash))
+    ) {
       recordLoginFailure(req);
       return res.status(401).json({ error: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
     }
 
-    const db = await adminDb();
-    const { data: membership, error: membershipError } = await db
-      .from("orchest_admin_users")
-      .select("user_id")
-      .eq("user_id", data.user.id)
-      .maybeSingle();
-    if (membershipError) {
-      console.error("Admin membership lookup failed", membershipError.code);
-      return res.status(503).json({ error: "إعداد صلاحيات المديرين في Supabase غير مكتمل" });
-    }
-    if (!membership) {
-      recordLoginFailure(req);
-      return res
-        .status(403)
-        .json({ error: "تم تسجيل الحساب في Supabase، لكنه غير مخوّل بلوحة الإدارة" });
-    }
-
-    const sessionToken = createSessionToken(data.user.id);
+    const sessionToken = createSessionToken(account.user_id);
     if (!sessionToken)
       return res.status(503).json({ error: "مفتاح جلسة المدير غير مهيأ على الخادم" });
+    loginWindows.delete(getClientIp(req));
     setSessionCookie(res, sessionToken);
     return res.json({ authenticated: true });
   } catch (error) {
-    console.error("Supabase Auth login failed", error instanceof Error ? error.name : "unknown");
-    return res.status(503).json({ error: "تعذر الاتصال بخدمة Supabase Auth حالياً" });
+    console.error("Custom admin login failed", error instanceof Error ? error.name : "unknown");
+    return res.status(503).json({ error: "تعذر الاتصال بقاعدة البيانات حالياً" });
   }
 });
 
