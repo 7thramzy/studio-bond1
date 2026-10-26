@@ -32,6 +32,7 @@ import {
   FolderPlus,
   Gift,
   BookOpen,
+  CloudDownload,
 } from "lucide-react";
 import {
   Track,
@@ -61,6 +62,11 @@ import { YouTubeImportPanel } from "./YouTubeImportPanel";
 import { PwaNotificationsPanel } from "./PwaNotificationsPanel";
 import { AdminSiteDocumentation } from "./AdminSiteDocumentation";
 import { uploadMediaFile } from "../services/mediaUpload";
+import {
+  isGoogleDrivePickerConfigured,
+  pickAudioFileFromGoogleDrive,
+  preloadGoogleDrivePicker,
+} from "../services/googleDrivePicker";
 import { adminLoadAllOrders, type AdminOrdersQuery } from "../services/catalogDb";
 
 const ORDERS_PAGE_SIZE = 25;
@@ -291,6 +297,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [audioUploadError, setAudioUploadError] = useState<string | null>(null);
   const [isAudioUploading, setIsAudioUploading] = useState(false);
   const [audioRetryFile, setAudioRetryFile] = useState<File | null>(null);
+  const [isDrivePickerLoading, setIsDrivePickerLoading] = useState(false);
+  const [isDriveFileLoading, setIsDriveFileLoading] = useState(false);
+  const [drivePickerReady, setDrivePickerReady] = useState(false);
+  const [drivePickerError, setDrivePickerError] = useState<string | null>(null);
   const [newDescription, setNewDescription] = useState("");
   const [isNewTrend, setIsNewTrend] = useState(false);
   const [isPublished, setIsPublished] = useState(true);
@@ -299,6 +309,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [generatedSeo, setGeneratedSeo] = useState<GeneratedSeo | null>(null);
 
   const isDark = theme === "dark";
+
+  useEffect(() => {
+    if (!isAddModalOpen || !isGoogleDrivePickerConfigured()) {
+      setDrivePickerReady(false);
+      setIsDrivePickerLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsDrivePickerLoading(true);
+    setDrivePickerError(null);
+    void preloadGoogleDrivePicker()
+      .then(() => {
+        if (!cancelled) setDrivePickerReady(true);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setDrivePickerError(error instanceof Error ? error.message : "تعذر تجهيز Google Drive.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsDrivePickerLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAddModalOpen]);
 
   const handleAudioUpload = async (inputFile: File) => {
     const extension = inputFile.name.split(".").pop()?.toLowerCase() ?? "";
@@ -348,6 +386,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setAudioUploadError(error instanceof Error ? error.message : "تعذر رفع الملف الصوتي.");
     } finally {
       setIsAudioUploading(false);
+    }
+  };
+
+  const handleSelectAudioFromDrive = async () => {
+    setDrivePickerError(null);
+    setAudioUploadError(null);
+    setIsDriveFileLoading(true);
+    try {
+      const file = await pickAudioFileFromGoogleDrive();
+      if (file) await handleAudioUpload(file);
+    } catch (error) {
+      setDrivePickerError(
+        error instanceof Error ? error.message : "تعذر استيراد الملف من Google Drive.",
+      );
+    } finally {
+      setIsDriveFileLoading(false);
     }
   };
 
@@ -452,6 +506,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setNewAudioUrl("");
     setAudioUploadProgress(0);
     setAudioUploadError(null);
+    setDrivePickerError(null);
     setAudioRetryFile(null);
     setNewCode("");
     setNewDuration("");
@@ -1811,6 +1866,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       : "bg-gray-50 border-black/10 text-black"
                   }`}
                 />
+                <button
+                  type="button"
+                  disabled={
+                    !isGoogleDrivePickerConfigured() ||
+                    !drivePickerReady ||
+                    isDrivePickerLoading ||
+                    isDriveFileLoading ||
+                    isAudioUploading
+                  }
+                  onClick={() => void handleSelectAudioFromDrive()}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-3 py-2.5 text-xs font-bold text-[#D4AF37] transition hover:bg-[#D4AF37]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <CloudDownload className="h-4 w-4" />
+                  {isDrivePickerLoading
+                    ? "جاري تجهيز Google Drive…"
+                    : isDriveFileLoading
+                      ? "جاري استيراد الملف من Drive…"
+                      : isGoogleDrivePickerConfigured()
+                        ? "اختيار ملف من Google Drive"
+                        : "Google Drive غير مهيأ"}
+                </button>
+                {!isGoogleDrivePickerConfigured() && (
+                  <p className="text-[11px] leading-5 text-amber-500">
+                    يتطلب تفعيل هذه الميزة إعداد Google Picker للموقع. بعد ربطه سيظهر اختيار الملفات
+                    هنا.
+                  </p>
+                )}
+                {drivePickerError && (
+                  <p className="text-xs text-rose-400" role="alert">
+                    {drivePickerError}
+                  </p>
+                )}
                 <input
                   type="file"
                   accept=".mp3,.m4a,.mp4,.aac,.wav,.ogg,.webm,audio/mpeg,audio/mp4,audio/aac,audio/wav,audio/ogg,audio/webm"
@@ -1823,7 +1910,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   className="block w-full text-xs text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-[#D4AF37]/15 file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#D4AF37]"
                 />
                 <p className="text-[11px] text-gray-400">
-                  تُرفع الملفات إلى مساحة التخزين مباشرةً، بحد أقصى 30 ميجابايت.
+                  تُرفع الملفات المحلية أو المستوردة من Drive إلى مساحة التطبيق، بحد أقصى 30
+                  ميجابايت.
                 </p>
                 {isAudioUploading && (
                   <div className="space-y-1" role="status" aria-live="polite">
