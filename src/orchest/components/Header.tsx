@@ -76,14 +76,11 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onNavigate("home")}
               className="flex items-center gap-3 cursor-pointer group"
             >
-              {/* Golden Soundwave Graphic */}
-              <div className="relative flex items-center gap-[3px] h-9 px-2.5 py-1 rounded-xl bg-gradient-to-br from-[#D4AF37]/20 via-[#D4AF37]/10 to-transparent border border-[#D4AF37]/40 shadow-[0_0_15px_rgba(212,175,55,0.2)]">
-                <span className="w-1 h-3 rounded-full bg-[#D4AF37] group-hover:h-5 transition-all duration-300" />
-                <span className="w-1 h-6 rounded-full bg-[#D4AF37] group-hover:h-7 transition-all duration-300" />
-                <span className="w-1 h-8 rounded-full bg-[#D4AF37] group-hover:h-4 transition-all duration-300" />
-                <span className="w-1 h-5 rounded-full bg-[#D4AF37] group-hover:h-8 transition-all duration-300" />
-                <span className="w-1 h-2 rounded-full bg-[#D4AF37] group-hover:h-4 transition-all duration-300" />
-              </div>
+              <img
+                src="/icon-192.png"
+                alt="شعار أوركست"
+                className="h-10 w-10 sm:h-11 sm:w-11 rounded-full object-cover shadow-[0_0_15px_rgba(20,41,74,0.3)] transition-transform duration-300 group-hover:scale-105"
+              />
 
               <div className="flex flex-col">
                 <div className="flex items-baseline gap-1.5">
