@@ -48,6 +48,7 @@ import {
 import {
   formatCommas,
   parseDuration,
+  generateNextTrackCode,
   validateWhatsAppNumber,
   exportOrdersToCSV,
   exportFullBackupJSON,
@@ -405,7 +406,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       ...(existing?.coverImage ? { coverImage: existing.coverImage } : {}),
     };
     if (existing) onUpdateArtist(artist);
-    else onAddArtist(artist);
+    else {
+      onAddArtist(artist);
+      if (isAddModalOpen) setNewArtist(artist.name);
+    }
     setIsArtistModalOpen(false);
     resetArtistForm();
   };
@@ -485,10 +489,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       toast.error("يرجى إدخال اسم العمل واسم المنشد");
       return;
     }
-    if (!newCode.trim()) {
-      toast.error("يرجى إدخال كود العمل");
-      return;
-    }
     const durationSeconds = parseDuration(newDuration);
     if (durationSeconds == null) {
       toast.error("أدخل مدة صحيحة بصيغة دقائق:ثوانٍ، مثل 04:30");
@@ -497,6 +497,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     const matchingCat = categories.find((c) => c.id === newCategory);
     const categoryLabel = matchingCat ? matchingCat.name : "زفات";
+    const code =
+      editingTrackId && newCode.trim()
+        ? newCode.trim()
+        : generateNextTrackCode(
+            tracks.filter((track) => track.id !== editingTrackId).map((track) => track.code),
+          );
 
     if (editingTrackId) {
       const existing = tracks.find((t) => t.id === editingTrackId);
@@ -508,7 +514,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         ...existing,
         title: newTitle.trim(),
         artist: newArtist.trim(),
-        code: newCode.trim(),
+        code,
         durationFormatted: newDuration,
         rhythm: newRhythm,
         categoryId: newCategory,
@@ -529,7 +535,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       id: `orc-${Date.now()}`,
       title: newTitle.trim(),
       artist: newArtist.trim(),
-      code: newCode.trim(),
+      code,
       duration: durationSeconds,
       durationFormatted: newDuration.trim(),
       playsCount: 0,
@@ -559,6 +565,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   );
 
   const filteredOrders = orders;
+
+  const suggestedTrackCode = generateNextTrackCode(tracks.map((track) => track.code));
+  const tabGroups = [
+    {
+      title: "إدارة المحتوى",
+      tabs: [
+        { id: "tracks" as const, label: "الأعمال الصوتية", icon: Headphones, count: tracks.length },
+        { id: "artists" as const, label: "الفنانون", icon: Users, count: artists.length },
+        { id: "categories" as const, label: "التصنيفات", icon: Layers, count: categories.length },
+        { id: "offers" as const, label: "العروض والثيمات", icon: Palette, count: offers.length },
+      ],
+    },
+    {
+      title: "الطلبات والتسليم",
+      tabs: [
+        { id: "orders" as const, label: "طلبات واتساب", icon: MessageCircle, count: totalOrders },
+        { id: "gifts" as const, label: "بطاقات التسليم", icon: Gift },
+      ],
+    },
+    {
+      title: "الأدوات",
+      tabs: [
+        { id: "assistant" as const, label: "مساعد الإدارة", icon: Sparkles },
+        { id: "youtube" as const, label: "استيراد YouTube", icon: Youtube },
+      ],
+    },
+    {
+      title: "التقارير",
+      tabs: [{ id: "analytics" as const, label: "التحليلات", icon: TrendingUp }],
+    },
+    {
+      title: "النظام",
+      tabs: [
+        { id: "settings" as const, label: "الإعدادات والنسخ", icon: Settings },
+        { id: "documentation" as const, label: "توثيق الموقع", icon: BookOpen },
+      ],
+    },
+  ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
@@ -678,126 +722,67 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       </div>
 
-      {/* Tabs navigation */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-4 mb-6">
-        <button
-          onClick={() => setActiveTab("tracks")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-            activeTab === "tracks"
-              ? "bg-[#D4AF37] text-black shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
+      <div
+        className={`mb-6 rounded-2xl border p-3 sm:p-4 ${
+          isDark ? "bg-[#16161C] border-white/10" : "bg-white border-black/10 shadow-sm"
+        }`}
+      >
+        <div className="mb-3">
+          <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-[#D4AF37]">
+            تنقل سريع
+          </p>
+          <h2 className="px-2 pt-1 text-sm font-black">أقسام لوحة التحكم</h2>
+        </div>
+        <nav
+          aria-label="أقسام لوحة التحكم"
+          className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5"
         >
-          إدارة الأعمال الصوتية ({tracks.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("artists")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-            activeTab === "artists"
-              ? "bg-[#D4AF37] text-black shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>الفنانون ({artists.length})</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("categories")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-            activeTab === "categories"
-              ? "bg-[#D4AF37] text-black shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          <span>إدارة التصنيفات ({categories.length})</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("offers")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-            activeTab === "offers"
-              ? "bg-[#D4AF37] text-black shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <Palette className="w-4 h-4" />
-          <span>العروض والثيمات ({offers.length})</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("orders")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-            activeTab === "orders"
-              ? "bg-[#D4AF37] text-black shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          سجل طلبات واتساب ({orders.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("gifts")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-            activeTab === "gifts"
-              ? "bg-[#D4AF37] text-black shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <Gift className="w-4 h-4" />
-          بطاقة التسليم
-        </button>
-        <button
-          onClick={() => setActiveTab("analytics")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-            activeTab === "analytics"
-              ? "bg-[#D4AF37] text-black shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          التحليلات والمخططات
-        </button>
-        <button
-          onClick={() => setActiveTab("assistant")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-            activeTab === "assistant"
-              ? "bg-[#D4AF37] text-black shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <Sparkles className="w-4 h-4" />
-          مساعد الإدارة
-        </button>
-        <button
-          onClick={() => setActiveTab("youtube")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-            activeTab === "youtube"
-              ? "bg-[#D4AF37] text-black shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <Youtube className="w-4 h-4" />
-          YouTube
-        </button>
-        <button
-          onClick={() => setActiveTab("settings")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-            activeTab === "settings"
-              ? "bg-[#D4AF37] text-black shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          <span>الإعدادات والنسخ الاحتياطي</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("documentation")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-            activeTab === "documentation"
-              ? "bg-[#D4AF37] text-black shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <BookOpen className="w-4 h-4 shrink-0" />
-          <span>توثيق الموقع وميزاته لموقع أوركست</span>
-        </button>
+          {tabGroups.map((group) => (
+            <section key={group.title} className="min-w-0">
+              <h3 className="mb-1.5 px-2 text-[10px] font-bold text-gray-500">{group.title}</h3>
+              <div className="space-y-1">
+                {group.tabs.map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      id={`admin-tab-${tab.id}`}
+                      type="button"
+                      aria-current={isActive ? "page" : undefined}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex min-h-10 w-full items-center justify-between gap-2 rounded-xl border px-2.5 py-2 text-right text-[11px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] sm:text-xs ${
+                        isActive
+                          ? "border-[#D4AF37]/60 bg-[#D4AF37] text-black shadow-sm"
+                          : isDark
+                            ? "border-transparent text-gray-300 hover:border-white/10 hover:bg-white/5 hover:text-white"
+                            : "border-transparent text-gray-600 hover:border-black/10 hover:bg-black/5 hover:text-black"
+                      }`}
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span className="min-w-0 leading-4">{tab.label}</span>
+                      </span>
+                      {"count" in tab && typeof tab.count === "number" && (
+                        <span
+                          className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] ${
+                            isActive
+                              ? "bg-black/10 text-black"
+                              : isDark
+                                ? "bg-white/10 text-gray-300"
+                                : "bg-black/5 text-gray-600"
+                          }`}
+                        >
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </nav>
       </div>
 
       {/* Tab 1: Media Manager Table */}
@@ -1686,32 +1671,65 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold mb-1">المنشد</label>
-                  <input
-                    type="text"
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <label className="text-xs font-semibold">الفنان / المنشد</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetArtistForm();
+                        setIsArtistModalOpen(true);
+                      }}
+                      className="text-[10px] font-bold text-[#D4AF37] hover:underline"
+                    >
+                      + إضافة فنان
+                    </button>
+                  </div>
+                  <select
                     required
                     value={newArtist}
                     onChange={(e) => setNewArtist(e.target.value)}
-                    placeholder="مثال: محمد العتيبي"
-                    className={`w-full px-3 py-2 text-sm rounded-xl border outline-none ${
+                    className={`w-full cursor-pointer rounded-xl border px-3 py-2 text-sm outline-none ${
                       isDark
-                        ? "bg-black/40 border-white/10 text-white"
+                        ? "bg-[#16161C] border-white/10 text-white"
                         : "bg-gray-50 border-black/10 text-black"
                     }`}
-                  />
+                  >
+                    <option value="">اختر الفنان</option>
+                    {newArtist && !artists.some((artist) => artist.name === newArtist) && (
+                      <option value={newArtist}>{newArtist} (محفوظ سابقًا)</option>
+                    )}
+                    {artists.map((artist) => (
+                      <option key={artist.id} value={artist.name}>
+                        {artist.name}
+                        {artist.role ? ` — ${artist.role}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {artists.length === 0 && (
+                    <p className="mt-1 text-[10px] text-gray-400">
+                      أضف الفنان أولًا من الزر أعلاه، وسيتم اختياره تلقائيًا.
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1">كود العمل</label>
+                  <label className="block text-xs font-semibold mb-1">
+                    كود العمل {editingTrackId ? "(ثابت)" : "(تلقائي)"}
+                  </label>
                   <input
                     type="text"
-                    value={newCode}
-                    onChange={(e) => setNewCode(e.target.value)}
-                    className={`w-full px-3 py-2 text-sm rounded-xl border font-mono outline-none ${
+                    readOnly
+                    value={editingTrackId ? newCode : suggestedTrackCode}
+                    className={`w-full cursor-not-allowed rounded-xl border px-3 py-2 text-sm font-mono outline-none opacity-90 ${
                       isDark
-                        ? "bg-black/40 border-white/10 text-white"
+                        ? "bg-white/5 border-white/10 text-white"
                         : "bg-gray-50 border-black/10 text-black"
                     }`}
                   />
+                  <p className="mt-1 text-[10px] leading-4 text-gray-400">
+                    {editingTrackId
+                      ? "يبقى الكود كما هو حتى لا تتأثر روابط العمل والطلبات السابقة."
+                      : "يُنشئ النظام كودًا متسلسلًا فريدًا عند الحفظ."}
+                  </p>
                 </div>
               </div>
 

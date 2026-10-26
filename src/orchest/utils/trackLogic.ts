@@ -19,6 +19,25 @@ export function parseDuration(value: string): number | null {
   return minutes * 60 + seconds;
 }
 
+/** Generate the next available public work code using the existing #ORC-### convention. */
+export function generateNextTrackCode(existingCodes: readonly string[]): string {
+  const usedCodes = new Set(
+    existingCodes.map((code) => code.trim().replace(/^#/, '').toUpperCase()),
+  );
+  const highestSequence = existingCodes.reduce((highest, code) => {
+    const match = code.trim().match(/^#?ORC-(\d+)$/i);
+    return match ? Math.max(highest, Number(match[1])) : highest;
+  }, 0);
+
+  let sequence = highestSequence + 1;
+  let candidate = `#ORC-${String(sequence).padStart(3, '0')}`;
+  while (usedCodes.has(candidate.slice(1).toUpperCase())) {
+    sequence += 1;
+    candidate = `#ORC-${String(sequence).padStart(3, '0')}`;
+  }
+  return candidate;
+}
+
 /** Format a number using a compact English suffix for dashboard display. */
 export function formatNumberK(num: number): string {
   if (!Number.isFinite(num)) return '0';

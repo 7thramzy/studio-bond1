@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { 
   formatDuration,
   parseDuration,
+  generateNextTrackCode,
   formatNumberK, 
   calculateConversionRate, 
   generateWhatsAppMessage, 
@@ -44,6 +45,13 @@ test('parseDuration accepts valid MM:SS and rejects malformed values', () => {
   assert.equal(parseDuration('0:05'), 5);
   assert.equal(parseDuration('04:60'), null);
   assert.equal(parseDuration('abc'), null);
+});
+
+test('generateNextTrackCode follows the ORC sequence and avoids used codes', () => {
+  assert.equal(generateNextTrackCode([]), '#ORC-001');
+  assert.equal(generateNextTrackCode(['#ORC-204', '#ORC-218']), '#ORC-219');
+  assert.equal(generateNextTrackCode(['#ORC-218', 'ORC-219']), '#ORC-220');
+  assert.equal(generateNextTrackCode(['custom-code', '#orc-009']), '#ORC-010');
 });
 
 test('formatNumberK formats thousands cleanly', () => {
