@@ -5,7 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 import type { Category, RhythmType, Track } from "../types/index";
 
 const publicTrackColumns =
-  "id,title,artist,vocalist,code,duration_seconds,duration_sec,duration,duration_formatted,rhythm,category_id,cover_url,cover_image,is_published,is_trend,is_exclusive,execution_days,suitable_for,created_at,description,audio_url";
+  "id,title,artist,vocalist,code,duration_seconds,duration_sec,duration,duration_formatted,rhythm,category_id,cover_url,cover_image,is_published,is_trend,is_exclusive,execution_days,suitable_for,created_at,description,audio_url,source_provider,source_video_id,source_url";
 const rhythmOptions: RhythmType[] = ["بدون موسيقى", "دفوف", "أوركسترا"];
 
 type PublicTrackRow = Pick<
@@ -31,6 +31,9 @@ type PublicTrackRow = Pick<
   | "created_at"
   | "description"
   | "audio_url"
+  | "source_provider"
+  | "source_video_id"
+  | "source_url"
 >;
 
 type PublicCategoryRow = Pick<
@@ -74,6 +77,9 @@ function mapTrack(row: PublicTrackRow, categoryLabel: string): Track {
     description: row.description,
   };
   if (row.audio_url) track.audioUrl = row.audio_url;
+  if (row.source_provider) track.sourceProvider = row.source_provider;
+  if (row.source_video_id) track.sourceVideoId = row.source_video_id;
+  if (row.source_url) track.sourceUrl = row.source_url;
   return track;
 }
 

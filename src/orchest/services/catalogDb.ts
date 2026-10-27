@@ -78,6 +78,9 @@ export async function loadCatalog(): Promise<Catalog> {
       description: r.description,
     };
     if (r.audio_url) track.audioUrl = r.audio_url;
+    if (r.source_provider) track.sourceProvider = r.source_provider;
+    if (r.source_video_id) track.sourceVideoId = r.source_video_id;
+    if (r.source_url) track.sourceUrl = r.source_url;
     if (r.lyrics) track.lyrics = r.lyrics;
     if (r.audio_frequency != null) track.audioFreq = r.audio_frequency;
     return track;
@@ -189,6 +192,9 @@ export async function loadCatalogTrackPage(
       description: r.description,
     };
     if (r.audio_url) track.audioUrl = r.audio_url;
+    if (r.source_provider) track.sourceProvider = r.source_provider;
+    if (r.source_video_id) track.sourceVideoId = r.source_video_id;
+    if (r.source_url) track.sourceUrl = r.source_url;
     if (r.lyrics) track.lyrics = r.lyrics;
     if (r.audio_frequency != null) track.audioFreq = r.audio_frequency;
     return track;
@@ -321,6 +327,11 @@ export async function adminLoadTracks(csrf: string, categories: Category[]): Pro
       description: String(r["description"] ?? ""),
     };
     if (typeof r["audio_url"] === "string" && r["audio_url"]) track.audioUrl = r["audio_url"];
+    if (typeof r["source_provider"] === "string" && r["source_provider"])
+      track.sourceProvider = r["source_provider"];
+    if (typeof r["source_video_id"] === "string" && r["source_video_id"])
+      track.sourceVideoId = r["source_video_id"];
+    if (typeof r["source_url"] === "string" && r["source_url"]) track.sourceUrl = r["source_url"];
     if (typeof r["lyrics"] === "string" && r["lyrics"]) track.lyrics = r["lyrics"];
     if (typeof r["audio_frequency"] === "number") track.audioFreq = r["audio_frequency"];
     return track;

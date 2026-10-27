@@ -10,6 +10,7 @@ import {
 import { Buffer } from "node:buffer";
 import { app, Type, createGeminiAiClient, type ShimReq, type ShimRes } from "./shim";
 import { parseOfferDateBoundary } from "../utils/offerLogic";
+import { parseYouTubeVideoId } from "../utils/youtubeReference";
 import { verifyAdminPassword } from "./adminPassword";
 
 interface CatalogTrack {
@@ -2011,6 +2012,10 @@ app.post("/api/admin/mutate", async (req, res) => {
       const dur = num(t["duration"]);
       const fmt = str(t["durationFormatted"], 10);
       const rhythm = str(t["rhythm"], 50);
+      const sourceUrlInput = str(t["sourceUrl"], 1000);
+      const sourceVideoId = sourceUrlInput ? parseYouTubeVideoId(sourceUrlInput) : null;
+      if (sourceUrlInput && !sourceVideoId)
+        return res.status(400).json({ error: "رابط YouTube غير صالح" });
       ({ error } = await db.from("tracks").insert({
         id: str(t["id"], 100),
         title: str(t["title"], 200),
@@ -2023,6 +2028,9 @@ app.post("/api/admin/mutate", async (req, res) => {
         duration_seconds: dur,
         duration_formatted: fmt,
         audio_url: str(t["audioUrl"]),
+        source_provider: sourceVideoId ? "youtube" : "",
+        source_video_id: sourceVideoId,
+        source_url: sourceVideoId ? `https://www.youtube.com/watch?v=${sourceVideoId}` : null,
         cover_image: cover,
         cover_url: cover,
         rhythm,
@@ -2048,6 +2056,10 @@ app.post("/api/admin/mutate", async (req, res) => {
       const dur = num(t["duration"]);
       const fmt = str(t["durationFormatted"], 10);
       const rhythm = str(t["rhythm"], 50);
+      const sourceUrlInput = str(t["sourceUrl"], 1000);
+      const sourceVideoId = sourceUrlInput ? parseYouTubeVideoId(sourceUrlInput) : null;
+      if (sourceUrlInput && !sourceVideoId)
+        return res.status(400).json({ error: "رابط YouTube غير صالح" });
       ({ error } = await db
         .from("tracks")
         .update({
@@ -2061,6 +2073,9 @@ app.post("/api/admin/mutate", async (req, res) => {
           duration_seconds: dur,
           duration_formatted: fmt,
           audio_url: str(t["audioUrl"], 2000),
+          source_provider: sourceVideoId ? "youtube" : "",
+          source_video_id: sourceVideoId,
+          source_url: sourceVideoId ? `https://www.youtube.com/watch?v=${sourceVideoId}` : null,
           cover_image: cover,
           cover_url: cover,
           rhythm,

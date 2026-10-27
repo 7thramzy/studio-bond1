@@ -65,6 +65,65 @@
 - `supabase/migrations/`: جداول اشتراكات push، اتصال YouTube، وربط مصادر الأعمال؛ محفوظة للمراجعة.
 - `public/`: manifest، service worker، offline fallback، الأيقونات، وmetadata الثابتة.
 
+## المرحلة 6 — مصدر YouTube والنشر إلى الشبكات الاجتماعية (معتمدة)
+
+### الوضع الحالي
+
+- نموذج العمل يملك `audioUrl` لملف صوتي مباشر، ومشغل الصوت يتوقع URL صالحاً لعنصر `<audio>`.
+- يوجد ربط YouTube بصلاحية `youtube.readonly` لاستيراد بيانات القناة فقط؛ كل عمل يصل غير منشور وبـ`audio_url` فارغ، فلا يجلب الملف الصوتي ولا يجعله قابلاً للتشغيل عبر مشغل الصوت الحالي.
+- أعمدة `source_provider` و`source_video_id` و`source_url` موجودة مسبقاً في قاعدة البيانات، وهي الآن حقول اختيارية في `Track`؛ يحفظها API بعد التحقق من رابط YouTube وتعرض تفاصيل العمل مشغل YouTube الرسمي، بينما يبقى `audioUrl` مستقلاً.
+- لا توجد تكاملات Instagram أو TikTok أو SoundCloud أو حسابات مرتبطة بها حالياً.
+
+### سلوك YouTube المعتمد
+
+- إبقاء رفع ملف الماستر من الجهاز أو Google Drive خياراً للصوت الذي سيستضيفه التطبيق وينشره إلى منصات أخرى.
+- إضافة إدخال رابط YouTube كمرجع للعمل مع تحقق الرابط وحفظ بيانات المصدر؛ لا ينزّل التطبيق الصوت أو الفيديو ولا يحوله إلى `audioUrl`.
+- إذا طُلب الاستماع من YouTube داخل الموقع، يكون عبر YouTube Player ظاهر وفق واجهته الرسمية، أو رابطاً يفتح YouTube؛ لا يُخفى المشغل ولا يُفصل الصوت عن الفيديو.
+- إبقاء استيراد قناة YouTube الحالي لمراجعة العنوان والوصف والغلاف والمدة، مع توضيح أنه لا يستورد ملف الصوت.
+
+### سلوك النشر الاجتماعي المعتمد
+
+- إضافة صفحة إعدادات لربط الحسابات المصرح بها عبر OAuth، مع أسرار ورموز وصول خادمية مشفرة وإمكانية فصل الحساب.
+- عرض معاينة ومنصات النشر المستهدفة وحالة مستقلة لكل منصة قبل الإرسال، ثم النشر بعد تأكيد صريح من المدير؛ لا يؤدي مجرد تحويل العمل إلى «منشور» في الكتالوج إلى منشور عام تلقائي على الشبكات.
+- رفع ملف الصوت الأصلي إلى SoundCloud. Instagram Reels وTikTok يحتاجان فيديو MP4 عمودياً من الغلاف والصوت؛ لا يُرسل ملف MP3 كما لو كان فيديو، ولا يستخرج النظام مادةً من رابط YouTube.
+- تسجيل معرف كل عملية وحالتها لكل منصة لمنع التكرار، وإظهار الفشل دون تكرار منشور غير مؤكد.
+- افتراض حساب رسمي واحد لكل منصة في الإصدار الأول ما لم يطلب صاحب الاستوديو إدارة عدة حسابات في المنصة نفسها.
+
+### بنية التنفيذ المعتمدة
+
+- تتبع واجهة الإدخال في `AdminDashboard.tsx` حقول مصدر العمل، ويعرض `TrackDetailsView.tsx` مشغل YouTube الرسمي عند وجود مصدر YouTube. تمر حقول المصدر بين `src/orchest/types/index.ts` و`src/orchest/services/catalogDb.ts`، وتظل `audioUrl` مستقلة.
+- يولد المتصفح فيديو 720×1280 عمودياً من صورة الغلاف ومسار الصوت الأصلي باستخدام `mediabunny` و`@mediabunny/aac-encoder` عند غياب ترميز AAC الأصلي. يُفحص دعم H.264 على الجهاز قبل البدء؛ إذا لم يدعمه الجهاز يتعذر فقط نشر Instagram/TikTok وتظهر رسالة واضحة، بينما يمكن متابعة المنصات الأخرى. لا يرسل الماستر إلى مزود تحويل خارجي.
+- يُرفع MP4 الناتج مباشرةً إلى bucket `orchest-media` العام بحد 30 ميغابايت عبر رابط رفع موقّع؛ تضيف migration نوع `video/mp4` مع الإبقاء على الحدود الحالية.
+- تضيف لوحة الإدارة `SocialConnectionsPanel` لربط حساب واحد لكل منصة، و`SocialPublishDialog` لمعاينة العمل وتحديد المنصات وتأكيد الإرسال ضمن مسار نشر الكتالوج.
+- تفصل `src/orchest/server/socialPlatformApi.ts` مسارات OAuth والرفع عن `src/orchest/server/api.ts`، مع إعادة استخدام حراسة جلسة المدير وCSRF وتشفير التكاملات الحالي. تبقى بيانات التطبيق في أسرار الخادم، والرموز في جدول خاص مشفر، وتُحفظ حالات النشر ومعرفات المزود في جدول يمنع التكرار.
+- يرسل Instagram رابط فيديو عام إلى واجهته، ويرفع TikTok الفيديو عبر مسار FILE_UPLOAD الخادمي، ويرفع SoundCloud ملف الصوت الأصلي عبر OAuth. تحفظ كل منصة حالة مستقلة حتى يمكن إظهار نجاح بعضها وفشل غيرها.
+- يضاف إلى `.env.example` أسماء إعدادات OAuth فقط، وإلى قاعدة البيانات migration لجلسات OAuth القصيرة وروابط الحسابات وحالات النشر؛ لا تطبق تغييرات على قاعدة الإنتاج أثناء اختبارات الوحدة.
+- يحافظ التصميم على RTL والذهبي والأنماط الحالية للوحة التحكم؛ لا تتغير واجهة المستخدم العامة إلا بعرض مشغل YouTube المرئي في تفاصيل العمل عند اختيار هذا المصدر.
+
+### قيود الخدمات الرسمية
+
+- تمنع سياسات YouTube عبر API نسخ أو تنزيل أو تخزين المحتوى الصوتي المرئي من YouTube دون موافقة كتابية. تسمح واجهة IFrame الرسمية بالتضمين، لكن يجب إبقاء المشغل ظاهراً وعدم تشغيل الصوت في الخلفية.
+- Instagram يحتاج حساباً احترافياً مؤهلاً وصلاحيات `instagram_business_basic` و`instagram_business_content_publish` عند استخدام Instagram Login؛ ويجب أن يكون الفيديو متاحاً للمنصة عبر URL عام وقت النشر. Standard Access مناسب لحسابات الاستوديو التي يملكها/يديرها التطبيق، أما الحسابات الخارجية فتحتاج Advanced Access.
+- TikTok Direct Post يتطلب موافقة `video.publish` وتفويض الحساب؛ access token الافتراضي ينتهي بعد 24 ساعة ويجب تجديده خادمياً. قبل العرض يطلب التطبيق creator info ويلتزم بخيارات الخصوصية ومدة الفيديو التي يسمح بها الحساب. تبقى منشورات التطبيق غير المدقق خاصة حتى اجتياز التدقيق. يدعم `FILE_UPLOAD` الملف مباشرة؛ وحجم MP4 الناتج المحدد بالتطبيق دون 30 ميغابايت يقع ضمن حد الرفع المفرد 64 ميغابايت.
+- SoundCloud يتطلب تطبيقاً مسجلاً وOAuth 2.1 مع PKCE في Authorization Code Flow؛ access token يقارب ساعة، وrefresh token أحادي الاستخدام ويجب تدوير قيمته المشفرة عند التجديد. يشترط أن يبدأ رفع محتوى المستخدم عمداً من استعمال موثّق ومصرّح به للتطبيق.
+
+### القرارات المعتمدة
+
+1. رابط YouTube مرجع مع مشغل رسمي ظاهر، ويبقى ملف الماستر المحلي أو Drive شرطاً للنشر الخارجي.
+2. توليد MP4 عمودي تلقائياً من الغلاف والصوت الأصلي؛ لا تنزيل أو تحويل أي محتوى من YouTube.
+3. حساب رسمي واحد لكل منصة في الإصدار الأول.
+4. مسار واحد: «نشر العمل» يعرض معاينةً ومنصات متصلة محددة افتراضياً، ويبدأ النشر للموقع والمنصات المختارة بعد تأكيد المدير.
+
+### مصادر السياسات
+
+- [سياسات مطوري YouTube](https://developers.google.com/youtube/terms/developer-policies) و[واجهة IFrame الرسمية](https://developers.google.com/youtube/iframe_api_reference).
+- [توثيق Instagram Content Publishing](https://developers.facebook.com/documentation/instagram-platform/content-publishing).
+- [Business Login for Instagram](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-instagram-login/business-login).
+- [دليل TikTok Direct Post](https://developers.tiktok.com/doc/content-posting-api-get-started) و[مرجع النشر المباشر](https://developers.tiktok.com/doc/content-posting-api-reference-direct-post).
+- [TikTok Web Login](https://developers.tiktok.com/doc/login-kit-web/) و[إدارة رموز OAuth](https://developers.tiktok.com/doc/oauth-user-access-token-management) و[نقل ملفات الوسائط](https://developers.tiktok.com/doc/content-posting-api-media-transfer-guide/).
+- [دليل SoundCloud API](https://developers.soundcloud.com/docs/api/guide) و[شروط SoundCloud API](https://developers.soundcloud.com/docs/api/terms-of-use).
+- [دليل Mediabunny لتصدير الوسائط](https://mediabunny.dev/guide/writing-media-files)، [دعم الصيغ والمرمّزات](https://mediabunny.dev/guide/supported-formats-and-codecs)، [مرمّز AAC الاحتياطي](https://mediabunny.dev/guide/extensions/aac-encoder)، و[قيود WebCodecs](https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API/Codec_selection).
+
 ## قيود جاهزية الإنتاج
 
 جاهزية الكود لا تعني اكتمال التكاملات الخارجية. يجب ضبط النطاق العام، تطبيق migrations بعد مراجعتها، إنشاء عضوية المدير، تزويد أسرار الخادم عبر مدير الأسرار، الموافقة على OAuth YouTube، اختبار Web Push على Chromium وiOS Home Screen، ثم اختبار Preview وProduction على النطاق الحقيقي. لا يمكن ضمان المركز الأول في Google ولا دقة مطلقة لنموذج لغوي؛ الضمان العملي هو منع الإجابة غير المدعومة ورفض ما لا يوجد في البيانات.

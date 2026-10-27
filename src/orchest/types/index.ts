@@ -16,6 +16,9 @@ export interface Track {
   categoryLabel: string;
   coverUrl: string;
   audioUrl?: string;
+  sourceProvider?: string;
+  sourceVideoId?: string;
+  sourceUrl?: string;
   lyrics?: string;
   isTrend?: boolean;
   isExclusive?: boolean;

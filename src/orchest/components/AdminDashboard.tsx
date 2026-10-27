@@ -68,6 +68,7 @@ import {
   preloadGoogleDrivePicker,
 } from "../services/googleDrivePicker";
 import { adminLoadAllOrders, type AdminOrdersQuery } from "../services/catalogDb";
+import { parseYouTubeVideoId } from "../utils/youtubeReference";
 
 const ORDERS_PAGE_SIZE = 25;
 
@@ -293,6 +294,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newDuration, setNewDuration] = useState("");
   const [newCoverUrl, setNewCoverUrl] = useState("");
   const [newAudioUrl, setNewAudioUrl] = useState("");
+  const [newYouTubeUrl, setNewYouTubeUrl] = useState("");
   const [audioUploadProgress, setAudioUploadProgress] = useState(0);
   const [audioUploadError, setAudioUploadError] = useState<string | null>(null);
   const [isAudioUploading, setIsAudioUploading] = useState(false);
@@ -504,6 +506,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setGeneratedSeo(null);
     setNewCoverUrl("");
     setNewAudioUrl("");
+    setNewYouTubeUrl("");
     setAudioUploadProgress(0);
     setAudioUploadError(null);
     setDrivePickerError(null);
@@ -527,6 +530,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setNewDuration(track.durationFormatted);
     setNewCoverUrl(track.coverUrl);
     setNewAudioUrl(track.audioUrl ?? "");
+    setNewYouTubeUrl(
+      track.sourceProvider === "youtube"
+        ? (track.sourceUrl ??
+            (track.sourceVideoId ? `https://www.youtube.com/watch?v=${track.sourceVideoId}` : ""))
+        : "",
+    );
     setAudioUploadProgress(0);
     setAudioUploadError(null);
     setAudioRetryFile(null);
@@ -547,6 +556,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const durationSeconds = parseDuration(newDuration);
     if (durationSeconds == null) {
       toast.error("أدخل مدة صحيحة بصيغة دقائق:ثوانٍ، مثل 04:30");
+      return;
+    }
+    const youtubeVideoId = newYouTubeUrl.trim() ? parseYouTubeVideoId(newYouTubeUrl) : null;
+    if (newYouTubeUrl.trim() && !youtubeVideoId) {
+      toast.error("أدخل رابط فيديو YouTube صالحاً");
       return;
     }
 
@@ -576,6 +590,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         categoryLabel,
         coverUrl: newCoverUrl.trim() || existing.coverUrl,
         audioUrl: newAudioUrl.trim(),
+        sourceProvider: youtubeVideoId ? "youtube" : "",
+        sourceVideoId: youtubeVideoId ?? "",
+        sourceUrl: youtubeVideoId ? `https://www.youtube.com/watch?v=${youtubeVideoId}` : "",
         isTrend: isNewTrend,
         isPublished,
         description: newDescription.trim() || existing.description,
@@ -600,6 +617,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       categoryLabel,
       coverUrl: newCoverUrl.trim(),
       ...(newAudioUrl.trim() ? { audioUrl: newAudioUrl.trim() } : {}),
+      sourceProvider: youtubeVideoId ? "youtube" : "",
+      sourceVideoId: youtubeVideoId ?? "",
+      sourceUrl: youtubeVideoId ? `https://www.youtube.com/watch?v=${youtubeVideoId}` : "",
       isTrend: isNewTrend,
       isPublished,
       isExclusive: false,
@@ -1942,6 +1962,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     )}
                   </div>
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold">رابط YouTube مرجعي (اختياري)</label>
+                <input
+                  type="url"
+                  dir="ltr"
+                  value={newYouTubeUrl}
+                  onChange={(event) => setNewYouTubeUrl(event.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className={`w-full rounded-xl border px-3 py-2 text-xs outline-none ${
+                    isDark
+                      ? "bg-black/40 border-white/10 text-white"
+                      : "bg-gray-50 border-black/10 text-black"
+                  }`}
+                />
+                <p className="text-[11px] leading-5 text-gray-400">
+                  رابط مرجعي فقط؛ يُعرض بمشغل YouTube الرسمي ولا يُنزّل منه الصوت. يمكن ترك الملف
+                  الصوتي فارغاً، لكن النشر إلى SoundCloud أو توليد فيديو اجتماعي يتطلب ملف ماستر
+                  مرفوعاً.
+                </p>
               </div>
 
               <div className="flex items-center gap-2">

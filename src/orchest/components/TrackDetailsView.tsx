@@ -16,12 +16,14 @@ import {
   Sparkles,
   Star,
   ShieldCheck,
-  Headphones
+  Headphones,
+  Youtube,
 } from 'lucide-react';
 import { Track, ThemeMode } from '../types/index';
 import { WaveformVisualizer } from './WaveformVisualizer';
 import { TrackCard } from './TrackCard';
 import { formatDuration } from '../utils/trackLogic';
+import { getYouTubeEmbedUrl } from '../utils/youtubeReference';
 
 interface TrackDetailsViewProps {
   track: Track;
@@ -71,6 +73,10 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
   onToggleFavoriteTrack,
 }) => {
   const isDark = theme === 'dark';
+  const youTubeEmbedUrl =
+    track.sourceProvider === "youtube" && track.sourceVideoId
+      ? getYouTubeEmbedUrl(track.sourceVideoId)
+      : null;
 
   // Similar tracks from same category or rhythm
   const similarTracks = allTracks
@@ -126,19 +132,26 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
 
-              <button
-                onClick={onTogglePlay}
-                aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'}
-                className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/50 transition-colors cursor-pointer"
-              >
-                <div className="w-16 h-16 rounded-full bg-[#D4AF37] text-black flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
-                  {isPlaying ? (
-                    <Pause className="w-8 h-8 fill-current" />
-                  ) : (
-                    <Play className="w-8 h-8 fill-current translate-x-[-2px]" />
-                  )}
-                </div>
-              </button>
+              {track.audioUrl && (
+                <button
+                  onClick={onTogglePlay}
+                  aria-label={isPlaying ? "إيقاف مؤقت" : "تشغيل"}
+                  className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/50 transition-colors cursor-pointer"
+                >
+                  <div className="w-16 h-16 rounded-full bg-[#D4AF37] text-black flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
+                    {isPlaying ? (
+                      <Pause className="w-8 h-8 fill-current" />
+                    ) : (
+                      <Play className="w-8 h-8 fill-current translate-x-[-2px]" />
+                    )}
+                  </div>
+                </button>
+              )}
+              {!track.audioUrl && youTubeEmbedUrl && (
+                <span className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-red-600/90 px-2.5 py-1 text-xs font-bold text-white">
+                  <Youtube className="h-3.5 w-3.5" /> مرجع YouTube
+                </span>
+              )}
 
               <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between text-xs text-white">
                 <span className="bg-black/60 px-2 py-0.5 rounded backdrop-blur-xs font-mono">
@@ -179,6 +192,40 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
                 {track.description}
               </p>
 
+              {youTubeEmbedUrl && (
+                <section
+                  aria-label="مشغل مرجع YouTube"
+                  className={`mb-6 overflow-hidden rounded-2xl border ${
+                    isDark ? "border-white/10 bg-black/30" : "border-black/10 bg-gray-50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3 px-4 py-3">
+                    <span className="flex items-center gap-2 text-sm font-bold">
+                      <Youtube className="h-4 w-4 text-red-500" /> مرجع YouTube
+                    </span>
+                    <a
+                      href={`https://www.youtube.com/watch?v=${track.sourceVideoId}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-semibold text-[#D4AF37] hover:underline"
+                    >
+                      فتح في YouTube
+                    </a>
+                  </div>
+                  <div className="aspect-video w-full bg-black">
+                    <iframe
+                      src={youTubeEmbedUrl}
+                      title={`مشغل YouTube الرسمي: ${track.title}`}
+                      className="h-full w-full"
+                      loading="lazy"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allow="encrypted-media; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  </div>
+                </section>
+              )}
+
               {/* Share/Favorite actions */}
               <div className="flex items-center gap-6 text-sm mb-6 pb-6 border-b border-white/10">
                 <div className="mr-auto flex items-center gap-2">
@@ -211,86 +258,88 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
               </div>
 
               {/* Advanced Audio Player & Waveform */}
-              <div
-                className={`p-4 sm:p-6 rounded-2xl border mb-6 ${
-                  isDark ? 'bg-[#0B0B0E]/60 border-white/10' : 'bg-gray-50 border-black/10'
-                }`}
-              >
-                {/* Waveform Graphic */}
-                <div className="mb-4">
-                  <WaveformVisualizer
-                    currentTime={currentTime}
-                    duration={duration}
-                    isPlaying={isPlaying}
-                    onSeek={onSeek}
-                    theme={theme}
-                    height={56}
-                    trackId={track.id}
-                  />
-                </div>
-
-                {/* Player Controls */}
-                <div className="flex items-center justify-between gap-4">
-                  {/* Time Counters */}
-                  <div className="text-xs sm:text-sm font-mono text-gray-400">
-                    <span>{formatDuration(currentTime)}</span>
-                    <span className="mx-1">/</span>
-                    <span>{formatDuration(duration)}</span>
-                  </div>
-
-                  {/* Playback Buttons */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => onSkip(-10)}
-                      aria-label="تأخير 10 ثوانٍ"
-                      className="p-2 rounded-lg text-gray-400 hover:text-white transition-colors cursor-pointer"
-                    >
-                      <RotateCcw className="w-5 h-5" />
-                    </button>
-
-                    <button
-                      onClick={onTogglePlay}
-                      aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'}
-                      className="w-12 h-12 rounded-full bg-[#D4AF37] text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                    >
-                      {isPlaying ? (
-                        <Pause className="w-6 h-6 fill-current" />
-                      ) : (
-                        <Play className="w-6 h-6 fill-current translate-x-[-1px]" />
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => onSkip(10)}
-                      aria-label="تقديم 10 ثوانٍ"
-                      className="p-2 rounded-lg text-gray-400 hover:text-white transition-colors cursor-pointer"
-                    >
-                      <RotateCw className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* Volume Control */}
-                  <div className="hidden sm:flex items-center gap-2">
-                    <button
-                      onClick={onToggleMute}
-                      aria-label={isMuted ? 'إلغاء كتم الصوت' : 'كتم الصوت'}
-                      className="text-gray-400 hover:text-white cursor-pointer"
-                    >
-                      {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                    </button>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={isMuted ? 0 : volume}
-                      onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
-                      className="w-20 accent-[#D4AF37] cursor-pointer"
-                      aria-label="مستوى الصوت"
+              {track.audioUrl ? (
+                <div
+                  className={`p-4 sm:p-6 rounded-2xl border mb-6 ${
+                    isDark ? 'bg-[#0B0B0E]/60 border-white/10' : 'bg-gray-50 border-black/10'
+                  }`}
+                >
+                  {/* Waveform Graphic */}
+                  <div className="mb-4">
+                    <WaveformVisualizer
+                      currentTime={currentTime}
+                      duration={duration}
+                      isPlaying={isPlaying}
+                      onSeek={onSeek}
+                      theme={theme}
+                      height={56}
+                      trackId={track.id}
                     />
                   </div>
+
+                  {/* Player Controls */}
+                  <div className="flex items-center justify-between gap-4">
+                    {/* Time Counters */}
+                    <div className="text-xs sm:text-sm font-mono text-gray-400">
+                      <span>{formatDuration(currentTime)}</span>
+                      <span className="mx-1">/</span>
+                      <span>{formatDuration(duration)}</span>
+                    </div>
+
+                    {/* Playback Buttons */}
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => onSkip(-10)}
+                        aria-label="تأخير 10 ثوانٍ"
+                        className="p-2 rounded-lg text-gray-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <RotateCcw className="w-5 h-5" />
+                      </button>
+
+                      <button
+                        onClick={onTogglePlay}
+                        aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'}
+                        className="w-12 h-12 rounded-full bg-[#D4AF37] text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                      >
+                        {isPlaying ? (
+                          <Pause className="w-6 h-6 fill-current" />
+                        ) : (
+                          <Play className="w-6 h-6 fill-current translate-x-[-1px]" />
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => onSkip(10)}
+                        aria-label="تقديم 10 ثوانٍ"
+                        className="p-2 rounded-lg text-gray-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <RotateCw className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {/* Volume Control */}
+                    <div className="hidden sm:flex items-center gap-2">
+                      <button
+                        onClick={onToggleMute}
+                        aria-label={isMuted ? 'إلغاء كتم الصوت' : 'كتم الصوت'}
+                        className="text-gray-400 hover:text-white cursor-pointer"
+                      >
+                        {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                      </button>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={isMuted ? 0 : volume}
+                        onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
+                        className="w-20 accent-[#D4AF37] cursor-pointer"
+                        aria-label="مستوى الصوت"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : null}
             </div>
           </div>
 

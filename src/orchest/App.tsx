@@ -489,7 +489,20 @@ export default function App() {
   };
 
   // Playback handlers
+  const openTrackDetails = (track: Track) => {
+    if (!track.audioUrl && track.sourceProvider === "youtube" && track.sourceVideoId) {
+      audioEngine.pause();
+    }
+    setSelectedTrack(track);
+    setCurrentView("track-details");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleTogglePlay = (track: Track) => {
+    if (!track.audioUrl && track.sourceProvider === "youtube" && track.sourceVideoId) {
+      openTrackDetails(track);
+      return;
+    }
     if (audioState.isPlaying && audioState.trackId === track.id) {
       audioEngine.pause();
     } else {
@@ -720,11 +733,7 @@ export default function App() {
                       e.stopPropagation();
                       handleTogglePlay(track);
                     }}
-                    onOpenDetails={() => {
-                      setSelectedTrack(track);
-                      setCurrentView("track-details");
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
+                    onOpenDetails={() => openTrackDetails(track)}
                     onOrderClick={(e) => {
                       e.stopPropagation();
                       openOrderModalForTrack(track);
@@ -922,11 +931,7 @@ export default function App() {
                       e.stopPropagation();
                       handleTogglePlay(track);
                     }}
-                    onOpenDetails={() => {
-                      setSelectedTrack(track);
-                      setCurrentView("track-details");
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
+                    onOpenDetails={() => openTrackDetails(track)}
                     onOrderClick={(e) => {
                       e.stopPropagation();
                       openOrderModalForTrack(track);
@@ -1033,11 +1038,7 @@ export default function App() {
                       e.stopPropagation();
                       handleTogglePlay(track);
                     }}
-                    onOpenDetails={() => {
-                      setSelectedTrack(track);
-                      setCurrentView("track-details");
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
+                    onOpenDetails={() => openTrackDetails(track)}
                     onOrderClick={(e) => {
                       e.stopPropagation();
                       openOrderModalForTrack(track);
@@ -1076,11 +1077,7 @@ export default function App() {
               setCurrentView("artists");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            onSelectTrack={(t) => {
-              setSelectedTrack(t);
-              setCurrentView("track-details");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
+            onSelectTrack={(t) => openTrackDetails(t)}
             onTogglePlay={handleTogglePlay}
             onOrderTrack={(t) => openOrderModalForTrack(t)}
             activeTrackId={selectedTrack?.id || null}
@@ -1148,7 +1145,7 @@ export default function App() {
       </main>
 
       {/* 2. Persistent Floating Sticky Audio Player */}
-      {selectedTrack && (
+      {selectedTrack?.audioUrl && (
         <StickyAudioPlayer
           track={selectedTrack}
           isPlaying={audioState.isPlaying && audioState.trackId === selectedTrack.id}
@@ -1231,11 +1228,7 @@ export default function App() {
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
         tracks={tracks}
-        onSelectTrack={(t) => {
-          setSelectedTrack(t);
-          setCurrentView("track-details");
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }}
+        onSelectTrack={(t) => openTrackDetails(t)}
         theme={theme}
       />
 
