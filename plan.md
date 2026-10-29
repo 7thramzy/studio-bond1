@@ -100,6 +100,9 @@
 - يضاف إلى `.env.example` أسماء إعدادات OAuth فقط، وإلى قاعدة البيانات migration لجلسات OAuth القصيرة وروابط الحسابات وحالات النشر؛ لا تطبق تغييرات على قاعدة الإنتاج أثناء اختبارات الوحدة.
 - يحافظ التصميم على RTL والذهبي والأنماط الحالية للوحة التحكم؛ لا تتغير واجهة المستخدم العامة إلا بعرض مشغل YouTube المرئي في تفاصيل العمل عند اختيار هذا المصدر.
 
+### تنفيذ الفيديو — مراجع API الرسمية
+- يستخدم Mediabunny `Output` مع `Mp4OutputFormat` و`BufferTarget`؛ يضيف `CanvasSource` إطارات عبر `add(timestamp, duration)` ويضيف `AudioBufferSource` الصوت عبر `add(AudioBuffer)`. يجب انتظار عمليات `add` لإتاحة backpressure، ثم إغلاق المصادر واستدعاء `finalize()` قبل قراءة الـbuffer.
+- يفحص التطبيق H.264/AVC بإعدادات الفيديو المستهدفة عبر `canEncodeVideo`، وAAC عبر `canEncodeAudio`؛ عند غياب AAC الأصلي يسجل `@mediabunny/aac-encoder` عبر `registerAacEncoder()` ويعيد فحص الدعم.
 ### قيود الخدمات الرسمية
 
 - تمنع سياسات YouTube عبر API نسخ أو تنزيل أو تخزين المحتوى الصوتي المرئي من YouTube دون موافقة كتابية. تسمح واجهة IFrame الرسمية بالتضمين، لكن يجب إبقاء المشغل ظاهراً وعدم تشغيل الصوت في الخلفية.
@@ -122,7 +125,7 @@
 - [دليل TikTok Direct Post](https://developers.tiktok.com/doc/content-posting-api-get-started) و[مرجع النشر المباشر](https://developers.tiktok.com/doc/content-posting-api-reference-direct-post).
 - [TikTok Web Login](https://developers.tiktok.com/doc/login-kit-web/) و[إدارة رموز OAuth](https://developers.tiktok.com/doc/oauth-user-access-token-management) و[نقل ملفات الوسائط](https://developers.tiktok.com/doc/content-posting-api-media-transfer-guide/).
 - [دليل SoundCloud API](https://developers.soundcloud.com/docs/api/guide) و[شروط SoundCloud API](https://developers.soundcloud.com/docs/api/terms-of-use).
-- [دليل Mediabunny لتصدير الوسائط](https://mediabunny.dev/guide/writing-media-files)، [دعم الصيغ والمرمّزات](https://mediabunny.dev/guide/supported-formats-and-codecs)، [مرمّز AAC الاحتياطي](https://mediabunny.dev/guide/extensions/aac-encoder)، و[قيود WebCodecs](https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API/Codec_selection).
+- [دليل Mediabunny لتصدير الوسائط](https://mediabunny.dev/guide/writing-media-files)، [دليل مصادر الوسائط](https://mediabunny.dev/guide/media-sources)، [AudioBufferSource](https://mediabunny.dev/api/AudioBufferSource)، [CanvasSource](https://mediabunny.dev/api/CanvasSource)، [دعم الصيغ والمرمّزات](https://mediabunny.dev/guide/supported-formats-and-codecs)، [مرمّز AAC الاحتياطي](https://mediabunny.dev/guide/extensions/aac-encoder)، و[قيود WebCodecs](https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API/Codec_selection).
 
 ## قيود جاهزية الإنتاج
 

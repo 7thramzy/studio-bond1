@@ -10,6 +10,7 @@ import {
 import { Buffer } from "node:buffer";
 import { app, Type, createGeminiAiClient, type ShimReq, type ShimRes } from "./shim";
 import { parseOfferDateBoundary } from "../utils/offerLogic";
+import { validateMediaUpload } from "../utils/mediaUploadPolicy";
 import { parseYouTubeVideoId } from "../utils/youtubeReference";
 import { verifyAdminPassword } from "./adminPassword";
 
@@ -1917,21 +1918,13 @@ app.post("/api/admin/media-upload-url", async (req, res) => {
     "audio/x-wav": "wav",
     "audio/ogg": "ogg",
     "audio/webm": "webm",
+    "video/mp4": "mp4",
   };
-  const maxSize = kind === "image" ? 2 * 1024 * 1024 : 30 * 1024 * 1024;
-  if (
-    !["image", "audio"].includes(kind) ||
-    !extensionByType[contentType] ||
-    (kind === "image" && !contentType.startsWith("image/")) ||
-    (kind === "audio" && !contentType.startsWith("audio/")) ||
-    !Number.isSafeInteger(size) ||
-    size < 1 ||
-    size > maxSize
-  ) {
-    return res.status(400).json({ error: "نوع الملف أو حجمه غير مدعوم." });
-  }
+  const validationError = validateMediaUpload(kind, contentType, size);
+  if (validationError || !extensionByType[contentType])
+    return res.status(400).json({ error: validationError ?? "نوع الملف أو حجمه غير مدعوم." });
 
-  const folder = kind === "image" ? "images" : "audio";
+  const folder = kind === "image" ? "images" : kind === "audio" ? "audio" : "videos";
   const path = `${folder}/${Date.now()}-${randomBytes(12).toString("hex")}.${extensionByType[contentType]}`;
   const db = await adminDb();
   const storage = db.storage.from("orchest-media");

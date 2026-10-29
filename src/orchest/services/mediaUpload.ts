@@ -1,6 +1,5 @@
 import { adminHeaders } from "../utils/adminAuth";
-
-export type MediaKind = "image" | "audio";
+import type { MediaKind } from "../utils/mediaUploadPolicy";
 
 interface SignedUploadResponse {
   signedUrl: string;
@@ -8,7 +7,7 @@ interface SignedUploadResponse {
 }
 
 export async function uploadMediaFile(
-  file: File,
+  file: Blob,
   csrfToken: string,
   kind: MediaKind,
   onProgress: (progress: number) => void,
