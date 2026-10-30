@@ -1,29 +1,29 @@
-import { toast } from 'sonner';
-import React from 'react';
-import { 
-  Play, 
-  Pause, 
-  RotateCcw, 
-  RotateCw, 
-  Volume2, 
-  VolumeX, 
-  Heart, 
-  Share2, 
-  ChevronRight, 
-  Clock, 
-  Check, 
-  MessageCircle, 
+import { toast } from "sonner";
+import React from "react";
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  RotateCw,
+  Volume2,
+  VolumeX,
+  Heart,
+  Share2,
+  ChevronRight,
+  Clock,
+  Check,
+  MessageCircle,
   Sparkles,
   Star,
   ShieldCheck,
   Headphones,
   Youtube,
-} from 'lucide-react';
-import { Track, ThemeMode } from '../types/index';
-import { WaveformVisualizer } from './WaveformVisualizer';
-import { TrackCard } from './TrackCard';
-import { formatDuration } from '../utils/trackLogic';
-import { getYouTubeEmbedUrl } from '../utils/youtubeReference';
+} from "lucide-react";
+import { Track, ThemeMode } from "../types/index";
+import { WaveformVisualizer } from "./WaveformVisualizer";
+import { TrackCard } from "./TrackCard";
+import { formatDuration } from "../utils/trackLogic";
+import { getYouTubeEmbedUrl } from "../utils/youtubeReference";
 
 interface TrackDetailsViewProps {
   track: Track;
@@ -72,7 +72,7 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
   favorites,
   onToggleFavoriteTrack,
 }) => {
-  const isDark = theme === 'dark';
+  const isDark = theme === "dark";
   const youTubeEmbedUrl =
     track.sourceProvider === "youtube" && track.sourceVideoId
       ? getYouTubeEmbedUrl(track.sourceVideoId)
@@ -80,20 +80,24 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
 
   // Similar tracks from same category or rhythm
   const similarTracks = allTracks
-    .filter((t) => t.id !== track.id && (t.categoryId === track.categoryId || t.rhythm === track.rhythm))
+    .filter(
+      (t) => t.id !== track.id && (t.categoryId === track.categoryId || t.rhythm === track.rhythm),
+    )
     .slice(0, 4);
 
   const handleShare = () => {
-    const url = `${window.location.origin}/tracks/${track.code.replace('#', '')}`;
+    const url = `${window.location.origin}/tracks/${track.code.replace("#", "")}`;
     if (navigator.share) {
-      navigator.share({
-        title: track.title,
-        text: `استمع إلى ${track.title} - استوديو أوركست`,
-        url,
-      }).catch(() => {});
+      navigator
+        .share({
+          title: track.title,
+          text: `استمع إلى ${track.title} - استوديو أوركست`,
+          url,
+        })
+        .catch(() => {});
     } else {
       navigator.clipboard.writeText(url);
-      toast.success('تم نسخ رابط العمل');
+      toast.success("تم نسخ رابط العمل");
     }
   };
 
@@ -117,7 +121,7 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
       {/* Main Track Detail Card */}
       <div
         className={`rounded-3xl border overflow-hidden transition-all shadow-2xl ${
-          isDark ? 'bg-[#16161C] border-white/10' : 'bg-white border-black/10'
+          isDark ? "bg-[#16161C] border-white/10" : "bg-white border-black/10"
         }`}
       >
         <div className="p-6 sm:p-8 lg:p-10">
@@ -178,17 +182,24 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
                 </span>
               </div>
 
-              <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">
-                {track.title}
-              </h1>
+              <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">{track.title}</h1>
 
               <div className="flex items-center gap-3 text-sm sm:text-base font-medium mb-4 text-[#9CA3AF]">
-                <span>المنشد: <strong className="text-white">{track.artist}</strong></span>
+                <span>
+                  المنشد: <strong className="text-white">{track.artist}</strong>
+                </span>
                 <span>•</span>
-                <span>كود العمل: <strong dir="ltr" className="font-mono text-[#D4AF37]">{track.code}</strong></span>
+                <span>
+                  كود العمل:{" "}
+                  <strong dir="ltr" className="font-mono text-[#D4AF37]">
+                    {track.code}
+                  </strong>
+                </span>
               </div>
 
-              <p className={`text-sm leading-relaxed mb-6 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+              <p
+                className={`text-sm leading-relaxed mb-6 ${isDark ? "text-gray-300" : "text-gray-600"}`}
+              >
                 {track.description}
               </p>
 
@@ -231,16 +242,16 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
                 <div className="mr-auto flex items-center gap-2">
                   <button
                     onClick={onToggleFavorite}
-                    aria-label={isFavorite ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
+                    aria-label={isFavorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
                     className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
                       isFavorite
-                        ? 'bg-rose-500/15 border-rose-500 text-rose-500'
+                        ? "bg-rose-500/15 border-rose-500 text-rose-500"
                         : isDark
-                        ? 'border-white/10 hover:border-white/30 text-gray-400'
-                        : 'border-black/10 hover:border-black/30 text-gray-600'
+                          ? "border-white/10 hover:border-white/30 text-gray-400"
+                          : "border-black/10 hover:border-black/30 text-gray-600"
                     }`}
                   >
-                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+                    <Heart className={`w-4 h-4 ${isFavorite ? "fill-current" : ""}`} />
                   </button>
 
                   <button
@@ -248,8 +259,8 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
                     aria-label="مشاركة العمل"
                     className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
                       isDark
-                        ? 'border-white/10 hover:border-white/30 text-gray-400'
-                        : 'border-black/10 hover:border-black/30 text-gray-600'
+                        ? "border-white/10 hover:border-white/30 text-gray-400"
+                        : "border-black/10 hover:border-black/30 text-gray-600"
                     }`}
                   >
                     <Share2 className="w-4 h-4" />
@@ -261,7 +272,7 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
               {track.audioUrl ? (
                 <div
                   className={`p-4 sm:p-6 rounded-2xl border mb-6 ${
-                    isDark ? 'bg-[#0B0B0E]/60 border-white/10' : 'bg-gray-50 border-black/10'
+                    isDark ? "bg-[#0B0B0E]/60 border-white/10" : "bg-gray-50 border-black/10"
                   }`}
                 >
                   {/* Waveform Graphic */}
@@ -298,7 +309,7 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
 
                       <button
                         onClick={onTogglePlay}
-                        aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'}
+                        aria-label={isPlaying ? "إيقاف مؤقت" : "تشغيل"}
                         className="w-12 h-12 rounded-full bg-[#D4AF37] text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
                       >
                         {isPlaying ? (
@@ -321,10 +332,14 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
                     <div className="hidden sm:flex items-center gap-2">
                       <button
                         onClick={onToggleMute}
-                        aria-label={isMuted ? 'إلغاء كتم الصوت' : 'كتم الصوت'}
+                        aria-label={isMuted ? "إلغاء كتم الصوت" : "كتم الصوت"}
                         className="text-gray-400 hover:text-white cursor-pointer"
                       >
-                        {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                        {isMuted ? (
+                          <VolumeX className="w-5 h-5" />
+                        ) : (
+                          <Volume2 className="w-5 h-5" />
+                        )}
                       </button>
                       <input
                         type="range"
@@ -348,7 +363,7 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
             {/* Card 1: خيارات التعديل المتاحة */}
             <div
               className={`p-6 rounded-2xl border ${
-                isDark ? 'bg-black/30 border-white/10' : 'bg-gray-50 border-black/10'
+                isDark ? "bg-black/30 border-white/10" : "bg-gray-50 border-black/10"
               }`}
             >
               <h3 className="font-bold text-lg mb-4 text-[#D4AF37] flex items-center gap-2">
@@ -384,14 +399,16 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
 
               <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-2 text-xs text-gray-400">
                 <Clock className="w-4 h-4 text-[#D4AF37]" />
-                <span>مدة التنفيذ والتسليم: <strong>{track.executionDays}</strong></span>
+                <span>
+                  مدة التنفيذ والتسليم: <strong>{track.executionDays}</strong>
+                </span>
               </div>
             </div>
 
             {/* Card 2: تفاصيل العمل الفنية */}
             <div
               className={`p-6 rounded-2xl border ${
-                isDark ? 'bg-black/30 border-white/10' : 'bg-gray-50 border-black/10'
+                isDark ? "bg-black/30 border-white/10" : "bg-gray-50 border-black/10"
               }`}
             >
               <h3 className="font-bold text-lg mb-4 text-[#D4AF37] flex items-center gap-2">
@@ -447,22 +464,30 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
 
       {/* Customer Trust & Features */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-10">
-        <div className={`p-4 rounded-2xl border text-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
+        <div
+          className={`p-4 rounded-2xl border text-center ${isDark ? "bg-white/5 border-white/10" : "bg-white border-black/10"}`}
+        >
           <Headphones className="w-6 h-6 mx-auto mb-2 text-[#D4AF37]" />
           <h4 className="font-bold text-sm">استماع فوري مباشر</h4>
           <p className="text-xs text-gray-400 mt-1">معاينة نقية بأعلى جودة استوديو</p>
         </div>
-        <div className={`p-4 rounded-2xl border text-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
+        <div
+          className={`p-4 rounded-2xl border text-center ${isDark ? "bg-white/5 border-white/10" : "bg-white border-black/10"}`}
+        >
           <Sparkles className="w-6 h-6 mx-auto mb-2 text-[#D4AF37]" />
           <h4 className="font-bold text-sm">تعديل مخصص بالأسماء</h4>
           <p className="text-xs text-gray-400 mt-1">تنسيق فوري لكلمات العروسين</p>
         </div>
-        <div className={`p-4 rounded-2xl border text-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
+        <div
+          className={`p-4 rounded-2xl border text-center ${isDark ? "bg-white/5 border-white/10" : "bg-white border-black/10"}`}
+        >
           <ShieldCheck className="w-6 h-6 mx-auto mb-2 text-[#D4AF37]" />
           <h4 className="font-bold text-sm">ضمان الجودة والدقة</h4>
           <p className="text-xs text-gray-400 mt-1">تسجيل احترافي ومراجعة فنية</p>
         </div>
-        <div className={`p-4 rounded-2xl border text-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
+        <div
+          className={`p-4 rounded-2xl border text-center ${isDark ? "bg-white/5 border-white/10" : "bg-white border-black/10"}`}
+        >
           <Clock className="w-6 h-6 mx-auto mb-2 text-[#D4AF37]" />
           <h4 className="font-bold text-sm">سرعة في التنفيذ</h4>
           <p className="text-xs text-gray-400 mt-1">استلام في الوقت المحدد لمناسبتك</p>
@@ -474,8 +499,12 @@ export const TrackDetailsView: React.FC<TrackDetailsViewProps> = ({
         <section className="mt-12">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight">أعمال مشابهة قد تعجبك</h2>
-              <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
+                أعمال مشابهة قد تعجبك
+              </h2>
+              <p
+                className={`text-xs sm:text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+              >
                 بناءً على اختيارك للقسم والإيقاع الصوتي
               </p>
             </div>
