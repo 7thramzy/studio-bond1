@@ -1590,11 +1590,13 @@ async function rejectPersistentPublicRateLimit(
     res.status(503).json({ error: "الخدمة غير متاحة حالياً" });
     return true;
   }
-  try {
-    const fingerprint = createHmac("sha256", serviceRoleKey).update(getClientIp(req)).digest("hex");
-    const db = await adminDb();
+	  try {
+	    const fingerprint = createHmac("sha256", serviceRoleKey).update(getClientIp(req)).digest("hex");
+	    const db = await adminDb();
     // The RPC is installed via migration and is not part of the generated types.
-    const rpc = db.rpc as unknown as (
+    // Keep Supabase's client context: PostgREST's rpc implementation reads
+    // internal client state through `this` and fails when detached.
+    const rpc = db.rpc.bind(db) as unknown as (
       fn: string,
       args: Record<string, unknown>,
     ) => Promise<{ data: unknown; error: { code?: string; message?: string } | null }>;
