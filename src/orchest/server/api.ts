@@ -2161,8 +2161,29 @@ app.post("/api/admin/mutate", async (req, res) => {
       break;
     }
     case "deleteCategory": {
-      const id = str(b["id"], 100);
-      ({ error } = await db.from("tracks").update({ category_id: null }).eq("category_id", id));
+      const id = str(b["id"], 100).trim();
+      if (!id) return res.status(400).json({ error: "معرّف التصنيف مطلوب" });
+
+      // Detach only the tracks that actually belong to this category. This
+      // guarantees every UPDATE has a concrete, non-empty WHERE filter.
+      const linkedTracks = await db
+        .from("tracks")
+        .select("id")
+        .eq("category_id", id)
+        .limit(5000);
+      if (linkedTracks.error) {
+        error = linkedTracks.error;
+        break;
+      }
+      const trackIds = (linkedTracks.data ?? [])
+        .map((track) => String(track.id ?? "").trim())
+        .filter(Boolean);
+      if (trackIds.length > 0) {
+        ({ error } = await db
+          .from("tracks")
+          .update({ category_id: null })
+          .in("id", trackIds));
+      }
       if (!error) ({ error } = await db.from("categories").delete().eq("id", id));
       break;
     }
