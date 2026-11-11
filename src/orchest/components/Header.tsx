@@ -12,6 +12,9 @@ import {
   LayoutDashboard,
   Heart,
   Bot,
+  UserCircle,
+  ChevronDown,
+  LogOut,
 } from "lucide-react";
 import { ThemeMode, AppView } from "../types/index";
 
@@ -24,6 +27,9 @@ interface HeaderProps {
   onQuickOrder: () => void;
   onOpenConcierge: () => void;
   favoritesCount: number;
+  isAdminAuthenticated: boolean;
+  adminAccountName: string;
+  onAdminLogout: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -35,8 +41,12 @@ export const Header: React.FC<HeaderProps> = ({
   onQuickOrder,
   onOpenConcierge,
   favoritesCount,
+  isAdminAuthenticated,
+  adminAccountName,
+  onAdminLogout,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const isDark = theme === "dark";
 
   const navLinks = [
@@ -191,6 +201,61 @@ export const Header: React.FC<HeaderProps> = ({
               <Bot className="w-4 h-4" />
             </button>
 
+            {isAdminAuthenticated && (
+              <div className="relative hidden sm:block">
+                <button
+                  type="button"
+                  onClick={() => setIsAccountMenuOpen((open) => !open)}
+                  aria-expanded={isAccountMenuOpen}
+                  aria-haspopup="menu"
+                  className={`flex items-center gap-2 rounded-xl border px-2.5 py-2 transition-all duration-200 cursor-pointer ${
+                    isDark
+                      ? "border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#F3E5AB] hover:bg-[#D4AF37]/15"
+                      : "border-[#B89728]/30 bg-[#D4AF37]/10 text-[#806817] hover:bg-[#D4AF37]/15"
+                  }`}
+                >
+                  <UserCircle className="h-5 w-5" />
+                  <span className="max-w-24 truncate text-xs font-semibold">{adminAccountName}</span>
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isAccountMenuOpen ? "rotate-180" : ""}`} />
+                </button>
+                {isAccountMenuOpen && (
+                  <div
+                    role="menu"
+                    className={`absolute left-0 top-full mt-2 w-48 rounded-2xl border p-2 shadow-2xl ${
+                      isDark ? "border-white/10 bg-[#16161C]" : "border-black/10 bg-white"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsAccountMenuOpen(false);
+                        onNavigate("admin");
+                      }}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-right text-sm font-semibold text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      لوحة التحكم
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsAccountMenuOpen(false);
+                        onAdminLogout();
+                      }}
+                      className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-right text-sm ${
+                        isDark ? "text-gray-300 hover:bg-white/5" : "text-gray-700 hover:bg-black/5"
+                      }`}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      تسجيل الخروج
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* CTA: Order Now Button (Desktop & Tablet) */}
             <button
               onClick={onQuickOrder}
@@ -240,9 +305,23 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               </div>
 
+              {isAdminAuthenticated && (
+                <div className={`mt-4 rounded-2xl border p-3 ${isDark ? "border-[#D4AF37]/20 bg-[#D4AF37]/10" : "border-[#B89728]/20 bg-[#D4AF37]/10"}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D4AF37]/20 text-[#D4AF37]">
+                      <UserCircle className="h-6 w-6" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] opacity-60">مسجل الدخول</p>
+                      <p className="truncate text-sm font-bold text-[#D4AF37]">{adminAccountName}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Navigation Links */}
               <div className="mt-6 flex flex-col gap-2">
-                {navLinks.map((link, idx) => (
+                {navLinks.filter((link) => link.view !== "admin").map((link, idx) => (
                   <button
                     key={idx}
                     onClick={() => {
@@ -261,6 +340,31 @@ export const Header: React.FC<HeaderProps> = ({
                     <span className="text-xs opacity-50">‹</span>
                   </button>
                 ))}
+
+                {isAdminAuthenticated && (
+                  <>
+                    <div className={`my-2 border-t ${isDark ? "border-white/10" : "border-black/10"}`} />
+                    <button
+                      onClick={() => {
+                        onNavigate("admin");
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-right text-base font-bold transition-all ${
+                        currentView === "admin"
+                          ? "bg-[#D4AF37]/15 text-[#D4AF37]"
+                          : isDark
+                            ? "text-[#D4AF37] hover:bg-white/5"
+                            : "text-[#806817] hover:bg-black/5"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <LayoutDashboard className="h-4 w-4" />
+                        لوحة التحكم
+                      </span>
+                      <span className="text-xs opacity-50">‹</span>
+                    </button>
+                  </>
+                )}
 
                 <button
                   onClick={() => {
@@ -300,6 +404,24 @@ export const Header: React.FC<HeaderProps> = ({
                   {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </button>
               </div>
+
+              {isAdminAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onAdminLogout();
+                  }}
+                  className={`flex w-full items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold ${
+                    isDark
+                      ? "border-white/10 text-gray-300 hover:bg-white/5"
+                      : "border-black/10 text-gray-700 hover:bg-black/5"
+                  }`}
+                >
+                  <LogOut className="h-4 w-4" />
+                  تسجيل الخروج
+                </button>
+              )}
 
               {/* Order Button */}
               <button

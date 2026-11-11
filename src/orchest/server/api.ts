@@ -360,10 +360,22 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-app.get("/api/auth/session", (req, res) => {
+app.get("/api/auth/session", async (req, res) => {
   const session = getAdminSession(req);
   if (!session) return res.json({ authenticated: false });
-  return res.json({ authenticated: true, csrfToken: session.csrfToken });
+  let accountName = "المدير";
+  try {
+    const db = await adminDb();
+    const { data: account } = await db
+      .from("orchest_admin_users")
+      .select("email,username")
+      .eq("user_id", session.userId)
+      .maybeSingle();
+    accountName = account?.username?.trim() || account?.email?.trim() || accountName;
+  } catch {
+    // Keep session validation available even if the display-name lookup fails.
+  }
+  return res.json({ authenticated: true, csrfToken: session.csrfToken, accountName });
 });
 
 app.post("/api/auth/logout", (_req, res) => {

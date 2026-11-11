@@ -92,6 +92,7 @@ export default function App() {
   }, [currentView]);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [adminCsrfToken, setAdminCsrfToken] = useState<string | null>(null);
+  const [adminAccountName, setAdminAccountName] = useState("المدير");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [tracksTotal, setTracksTotal] = useState(0);
@@ -396,8 +397,13 @@ export default function App() {
           "csrfToken" in session && typeof session.csrfToken === "string"
             ? session.csrfToken
             : null;
+        const accountName =
+          "accountName" in session && typeof session.accountName === "string"
+            ? session.accountName.trim()
+            : "";
         setIsAdminAuthenticated(Boolean(csrfToken));
         setAdminCsrfToken(csrfToken);
+        setAdminAccountName(accountName || "المدير");
         return;
       }
       clearAdminToken();
@@ -406,6 +412,7 @@ export default function App() {
     }
     setIsAdminAuthenticated(false);
     setAdminCsrfToken(null);
+    setAdminAccountName("المدير");
   };
 
   useEffect(() => {
@@ -419,6 +426,7 @@ export default function App() {
     clearAdminToken();
     setIsAdminAuthenticated(false);
     setAdminCsrfToken(null);
+    setAdminAccountName("المدير");
     setCurrentView("home");
     void refreshCatalog();
   };
@@ -655,6 +663,9 @@ export default function App() {
         }}
         onOpenConcierge={() => setIsAiConciergeOpen(true)}
         favoritesCount={favorites.length}
+        isAdminAuthenticated={isAdminAuthenticated}
+        adminAccountName={adminAccountName}
+        onAdminLogout={handleAdminLogout}
       />
 
       {/* Main Content Router */}
