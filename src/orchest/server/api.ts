@@ -876,9 +876,29 @@ app.post("/api/admin/youtube/sync", async (req, res) => {
         source_url: `https://www.youtube.com/watch?v=${video.id}`,
       };
     });
+    let freshRows = rows;
     if (rows.length > 0) {
-      const result = await db.from("tracks").upsert(rows, { onConflict: "id" });
-      if (result.error) throw result.error;
+      const sourceVideoIds = rows.map((row) => row.source_video_id);
+      const existing = await db
+        .from("tracks")
+        .select("source_video_id")
+        .eq("source_provider", "youtube")
+        .in("source_video_id", sourceVideoIds);
+      if (existing.error) throw existing.error;
+
+      const existingIds = new Set(
+        (existing.data ?? [])
+          .map((row) => row.source_video_id)
+          .filter((id): id is string => Boolean(id)),
+      );
+      freshRows = rows.filter((row) => !existingIds.has(row.source_video_id));
+
+      if (freshRows.length > 0) {
+        const result = await db
+          .from("tracks")
+          .insert(freshRows);
+        if (result.error) throw result.error;
+      }
     }
     await db
       .from("admin_youtube_connections")
@@ -890,8 +910,9 @@ app.post("/api/admin/youtube/sync", async (req, res) => {
       })
       .eq("id", youtubeConnection.id);
     return res.json({
-      imported: rows.length,
-      requiresReview: rows.length,
+      imported: freshRows.length,
+      skipped: rows.length - freshRows.length,
+      requiresReview: freshRows.length,
       channelTitle: youtubeConnection.channel_title,
     });
   } catch (error) {
