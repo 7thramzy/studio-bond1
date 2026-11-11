@@ -10,6 +10,7 @@ export const Route = createFileRoute("/admin")({
       { name: "description", content: "لوحة إدارة أوركست المحمية." },
       { name: "robots", content: "noindex, nofollow" },
     ],
+    links: [{ rel: "manifest", href: "/admin.webmanifest" }],
   }),
   component: AdminRoute,
 });

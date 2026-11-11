@@ -23,7 +23,10 @@ export const Route = createFileRoute("/")({
       ...(publicSiteUrl ? [{ property: "og:url", content: publicSiteUrl }] : []),
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: publicSiteUrl ? [{ rel: "canonical", href: publicSiteUrl }] : [],
+    links: [
+      { rel: "manifest", href: "/site.webmanifest" },
+      ...(publicSiteUrl ? [{ rel: "canonical", href: publicSiteUrl }] : []),
+    ],
   }),
   component: Index,
 });
