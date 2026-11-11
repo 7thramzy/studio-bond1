@@ -35,14 +35,14 @@ self.addEventListener("push", (event) => {
       badge: "/icon-192.png",
       dir: "rtl",
       lang: "ar",
-      data: { url: payload.url || "/?view=admin" },
+      data: { url: payload.url || "/admin" },
     }),
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || "/?view=admin";
+  const targetUrl = event.notification.data?.url || "/admin";
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       const existing = clients.find((client) => "focus" in client);

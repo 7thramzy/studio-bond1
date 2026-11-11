@@ -1023,7 +1023,7 @@ app.post("/api/admin/push/test", async (req, res) => {
           JSON.stringify({
             title: "أوركست",
             body: "الإشعارات تعمل. ستصلك تحديثات الطلبات هنا.",
-            url: "/?view=admin",
+            url: "/admin",
           }),
         ),
       ),
@@ -1726,7 +1726,7 @@ app.post("/api/public/orders", async (req, res) => {
   await notifyAdminPush(db, {
     title: "طلب جديد في أوركست",
     body: `${track.title} · ${clientNames} · يحتاج متابعة من لوحة الإدارة.`,
-    url: "/?view=admin",
+    url: "/admin",
   });
   return res.json({ ok: true });
 });

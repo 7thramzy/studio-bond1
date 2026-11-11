@@ -79,10 +79,9 @@ export default function App() {
   // App navigation state
   const [currentView, setCurrentView] = useState<AppView>(() => {
     try {
-      const requestedView = new URLSearchParams(window.location.search).get("view");
-      return isAdminHost || requestedView === "admin" || sessionStorage.getItem("orchest_view") === "admin"
-        ? "admin"
-        : "home";
+      // The admin surface is isolated to /admin. Never let a public URL or a
+      // stale sessionStorage value turn the visitor PWA into an admin shell.
+      return isAdminHost ? "admin" : "home";
     } catch {
       return "home";
     }
@@ -144,8 +143,9 @@ export default function App() {
     }
   };
   useEffect(() => {
+    if (isAdminHost) return;
     void refreshCatalog();
-  }, []);
+  }, [isAdminHost]);
 
   // Admin-only save; on failure show the reason and reload the real data.
   const persist = async (body: Record<string, unknown>, success?: string): Promise<boolean> => {
@@ -283,6 +283,7 @@ export default function App() {
 
   // Count one visit per browser session.
   useEffect(() => {
+    if (isAdminHost) return;
     try {
       if (sessionStorage.getItem("orchest_visit")) return;
       sessionStorage.setItem("orchest_visit", "1");
@@ -290,7 +291,7 @@ export default function App() {
       /* ignore */
     }
     recordVisit();
-  }, []);
+  }, [isAdminHost]);
 
   const handleUpdateWhatsAppNumber = (newNumber: string) => {
     setWhatsappNumber(newNumber);
@@ -432,7 +433,7 @@ export default function App() {
     setAdminCsrfToken(null);
     setAdminAccountName("المدير");
     setCurrentView(isAdminHost ? "admin" : "home");
-    void refreshCatalog();
+    if (!isAdminHost) void refreshCatalog();
   };
 
   // Ctrl/⌘K opens instant search from anywhere
@@ -461,6 +462,7 @@ export default function App() {
 
   // Sync audio engine state
   useEffect(() => {
+    if (isAdminHost) return;
     const recordedTrackIds = new Set<string>();
     const unsubscribe = audioEngine.subscribe((st) => {
       setAudioState(st);
@@ -470,7 +472,7 @@ export default function App() {
       }
     });
     return unsubscribe;
-  }, []);
+  }, [isAdminHost]);
 
   // Save favorites to localStorage
   useEffect(() => {

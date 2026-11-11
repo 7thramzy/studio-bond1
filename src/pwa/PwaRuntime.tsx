@@ -6,6 +6,9 @@ type InstallPromptEvent = Event & {
 };
 
 export function PwaRuntime() {
+  const isAdminPath =
+    typeof window !== "undefined" &&
+    (window.location.pathname === "/admin" || window.location.pathname.startsWith("/admin/"));
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [showInstall, setShowInstall] = useState(false);
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
@@ -35,8 +38,10 @@ export function PwaRuntime() {
 
     let registration: ServiceWorkerRegistration | undefined;
     if ("serviceWorker" in navigator && window.isSecureContext) {
+      const serviceWorkerUrl = isAdminPath ? "/admin/sw.js" : "/sw.js";
+      const serviceWorkerScope = isAdminPath ? "/admin" : "/";
       void navigator.serviceWorker
-        .register("/sw.js", { scope: "/" })
+        .register(serviceWorkerUrl, { scope: serviceWorkerScope })
         .then((nextRegistration) => {
           registration = nextRegistration;
           if (nextRegistration.waiting) setWaitingWorker(nextRegistration.waiting);
@@ -59,7 +64,7 @@ export function PwaRuntime() {
       window.removeEventListener("appinstalled", onInstalled);
       registration?.removeEventListener("updatefound", () => undefined);
     };
-  }, []);
+  }, [isAdminPath]);
 
   const install = async () => {
     if (!installPrompt) return;
@@ -85,12 +90,18 @@ export function PwaRuntime() {
     >
       <div className="min-w-0">
         <p className="text-sm font-bold text-[#D4AF37]">
-          {waitingWorker ? "تحديث جديد من أوركست" : "ثبّت أوركست على جهازك"}
+          {waitingWorker
+            ? "تحديث جديد من أوركست"
+            : isAdminPath
+              ? "ثبّت لوحة الإدارة"
+              : "ثبّت أوركست على جهازك"}
         </p>
         <p className="mt-0.5 text-xs text-white/65">
           {waitingWorker
             ? "أعد التحميل لتطبيق التحسينات بأمان."
-            : "وصول أسرع وتجربة مستقلة، مع بقاء الموقع قابلاً للاستخدام بدون تثبيت."}
+            : isAdminPath
+              ? "وصول مستقل وآمن إلى لوحة الإدارة."
+              : "وصول أسرع وتجربة مستقلة، مع بقاء الموقع قابلاً للاستخدام بدون تثبيت."}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
