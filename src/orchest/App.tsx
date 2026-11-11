@@ -66,7 +66,10 @@ import {
 } from "lucide-react";
 
 export default function App() {
-  const isAdminHost = window.location.hostname === "admin.orchest.studio";
+  const isAdminHost =
+    window.location.hostname === "admin.orchest.studio" ||
+    window.location.pathname === "/admin" ||
+    window.location.pathname.startsWith("/admin/");
   // Theme state with localStorage persistence
   const [theme, setTheme] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem("orchest_theme");

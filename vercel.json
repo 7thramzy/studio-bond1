@@ -1,9 +1,7 @@
 {
   "rewrites": [
-    {
-      "source": "/site.webmanifest",
-      "has": [{ "type": "host", "value": "admin.orchest.studio" }],
-      "destination": "/admin.webmanifest"
-    }
+    { "source": "/admin", "destination": "/" },
+    { "source": "/admin/", "destination": "/" },
+    { "source": "/admin/:path*", "destination": "/" }
   ]
 }

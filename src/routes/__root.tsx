@@ -142,9 +142,18 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
-    if (window.location.hostname !== "admin.orchest.studio") return;
-    document.title = "Orchest Admin | لوحة الإدارة";
-    document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute("content", "إدارة أوركست");
+    const isAdminSurface =
+      window.location.hostname === "admin.orchest.studio" ||
+      window.location.pathname === "/admin" ||
+      window.location.pathname.startsWith("/admin/");
+    const manifest = document.querySelector('link[rel="manifest"]');
+    manifest?.setAttribute("href", isAdminSurface ? "/admin.webmanifest" : "/site.webmanifest");
+    if (isAdminSurface) {
+      document.title = "Orchest Admin | لوحة الإدارة";
+      document
+        .querySelector('meta[name="apple-mobile-web-app-title"]')
+        ?.setAttribute("content", "إدارة أوركست");
+    }
   }, []);
 
   return (
