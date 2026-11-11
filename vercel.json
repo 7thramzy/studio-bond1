@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    {
+      "source": "/site.webmanifest",
+      "has": [{ "type": "host", "value": "admin.orchest.studio" }],
+      "destination": "/admin.webmanifest"
+    }
+  ]
+}

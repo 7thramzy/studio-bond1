@@ -141,6 +141,12 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    if (window.location.hostname !== "admin.orchest.studio") return;
+    document.title = "Orchest Admin | لوحة الإدارة";
+    document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute("content", "إدارة أوركست");
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}

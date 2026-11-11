@@ -66,6 +66,7 @@ import {
 } from "lucide-react";
 
 export default function App() {
+  const isAdminHost = window.location.hostname === "admin.orchest.studio";
   // Theme state with localStorage persistence
   const [theme, setTheme] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem("orchest_theme");
@@ -76,7 +77,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState<AppView>(() => {
     try {
       const requestedView = new URLSearchParams(window.location.search).get("view");
-      return requestedView === "admin" || sessionStorage.getItem("orchest_view") === "admin"
+      return isAdminHost || requestedView === "admin" || sessionStorage.getItem("orchest_view") === "admin"
         ? "admin"
         : "home";
     } catch {
@@ -427,7 +428,7 @@ export default function App() {
     setIsAdminAuthenticated(false);
     setAdminCsrfToken(null);
     setAdminAccountName("المدير");
-    setCurrentView("home");
+    setCurrentView(isAdminHost ? "admin" : "home");
     void refreshCatalog();
   };
 
@@ -666,6 +667,7 @@ export default function App() {
         isAdminAuthenticated={isAdminAuthenticated}
         adminAccountName={adminAccountName}
         onAdminLogout={handleAdminLogout}
+        isAdminHost={isAdminHost}
       />
 
       {/* Main Content Router */}

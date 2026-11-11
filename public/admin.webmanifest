@@ -1,0 +1,38 @@
+{
+  "id": "/admin-app",
+  "name": "Orchest Admin | لوحة الإدارة",
+  "short_name": "إدارة أوركست",
+  "description": "لوحة إدارة منصة أوركست المحمية.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/?source=admin-pwa&view=admin",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "theme_color": "#14294a",
+  "background_color": "#081426",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "فتح لوحة الإدارة",
+      "short_name": "الإدارة",
+      "url": "/?source=admin-pwa&view=admin",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

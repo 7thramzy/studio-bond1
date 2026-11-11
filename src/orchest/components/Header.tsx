@@ -30,6 +30,7 @@ interface HeaderProps {
   isAdminAuthenticated: boolean;
   adminAccountName: string;
   onAdminLogout: () => void;
+  isAdminHost: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -44,19 +45,22 @@ export const Header: React.FC<HeaderProps> = ({
   isAdminAuthenticated,
   adminAccountName,
   onAdminLogout,
+  isAdminHost,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const isDark = theme === "dark";
 
-  const navLinks = [
-    { label: "الرئيسية", view: "home" as AppView },
-    { label: "جميع الأعمال", view: "catalog" as AppView },
-    { label: "فنانو أوركست", view: "artists" as AppView },
-    { label: "زفات عروس", view: "catalog" as AppView, categoryId: "zaffat-bride" },
-    { label: "شيلات ترحيبية", view: "catalog" as AppView, categoryId: "welcoming" },
-    { label: "لوحة التحكم", view: "admin" as AppView },
-  ];
+  const navLinks = isAdminHost
+    ? [{ label: "لوحة التحكم", view: "admin" as AppView }]
+    : [
+        { label: "الرئيسية", view: "home" as AppView },
+        { label: "جميع الأعمال", view: "catalog" as AppView },
+        { label: "فنانو أوركست", view: "artists" as AppView },
+        { label: "زفات عروس", view: "catalog" as AppView, categoryId: "zaffat-bride" },
+        { label: "شيلات ترحيبية", view: "catalog" as AppView, categoryId: "welcoming" },
+        { label: "لوحة التحكم", view: "admin" as AppView },
+      ];
 
   return (
     <>
@@ -95,7 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="flex flex-col">
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-xl sm:text-2xl font-black tracking-tight text-[#D4AF37]">
-                    أوركست
+                    {isAdminHost ? "إدارة أوركست" : "أوركست"}
                   </span>
                   <span className="text-xs font-semibold tracking-wider opacity-70 uppercase font-sans">
                     Orchest
@@ -104,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <span
                   className={`text-[10px] sm:text-xs font-medium tracking-normal ${isDark ? "text-[#9CA3AF]" : "text-[#6B7280]"}`}
                 >
-                  منصة الزفات الخليجية والشيلات
+                  {isAdminHost ? "لوحة الإدارة المحمية" : "منصة الزفات الخليجية والشيلات"}
                 </span>
               </div>
             </div>
@@ -321,7 +325,7 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* Navigation Links */}
               <div className="mt-6 flex flex-col gap-2">
-                {navLinks.filter((link) => link.view !== "admin").map((link, idx) => (
+                {navLinks.filter((link) => isAdminHost || link.view !== "admin").map((link, idx) => (
                   <button
                     key={idx}
                     onClick={() => {
