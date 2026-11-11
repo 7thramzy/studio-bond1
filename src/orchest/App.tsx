@@ -73,7 +73,7 @@ export default function App() {
   // Theme state with localStorage persistence
   const [theme, setTheme] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem("orchest_theme");
-    return saved === "light" || saved === "dark" ? saved : "light";
+    return saved === "light" || saved === "dark" ? saved : "dark";
   });
 
   // App navigation state
@@ -147,6 +147,16 @@ export default function App() {
     void refreshCatalog();
   }, [isAdminHost]);
 
+  const refreshAdminCatalog = useCallback(async () => {
+    if (!adminCsrfToken) return;
+    const entities = await adminLoadEntities(adminCsrfToken);
+    const adminTracks = await adminLoadTracks(adminCsrfToken, entities.categories);
+    setCategories(entities.categories);
+    setArtists(entities.artists);
+    setTracks(adminTracks);
+    setTracksTotal(adminTracks.length);
+  }, [adminCsrfToken]);
+
   // Admin-only save; on failure show the reason and reload the real data.
   const persist = async (body: Record<string, unknown>, success?: string): Promise<boolean> => {
     if (!adminCsrfToken) {
@@ -159,7 +169,9 @@ export default function App() {
       return true;
     } catch (e) {
       toast.error("لم يتم الحفظ", { description: e instanceof Error ? e.message : undefined });
-      void refreshCatalog();
+      void Promise.all([refreshAdminCatalog(), refreshAdminConfig()]).catch((reloadError) =>
+        console.error("Admin state reload failed", reloadError),
+      );
       return false;
     }
   };
@@ -242,16 +254,8 @@ export default function App() {
 
   useEffect(() => {
     if (!adminCsrfToken) return;
-    void adminLoadEntities(adminCsrfToken)
-      .then(async (entities) => {
-        setCategories(entities.categories);
-        setArtists(entities.artists);
-        const adminTracks = await adminLoadTracks(adminCsrfToken, entities.categories);
-        setTracks(adminTracks);
-        setTracksTotal(adminTracks.length);
-      })
-      .catch((e) => console.error("Admin catalog load failed", e));
-  }, [adminCsrfToken]);
+    void refreshAdminCatalog().catch((e) => console.error("Admin catalog load failed", e));
+  }, [adminCsrfToken, refreshAdminCatalog]);
 
   const handleLoadMoreTracks = async () => {
     if (isLoadingMoreTracks || tracks.length >= tracksTotal || isAdminAuthenticated) return;
@@ -698,6 +702,10 @@ export default function App() {
                 const el = document.getElementById("trending-section");
                 el?.scrollIntoView({ behavior: "smooth" });
               }}
+              onOrderClick={() => {
+                const t = selectedTrack ?? tracks[0];
+                if (t) openOrderModalForTrack(t);
+              }}
             />
 
             {/* Categories Section (أقسامنا) */}
@@ -788,63 +796,52 @@ export default function App() {
 
             {/* Studio Features / Value Proposition */}
             <section
-              className={`py-14 border-y ${isDark ? "bg-[#16161C]/50 border-white/5" : "bg-white border-black/5"}`}
+              id="services"
+              dir="rtl"
+              className="border-y border-white/10 bg-[#07151a]/70 py-16 sm:py-24"
             >
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center max-w-2xl mx-auto mb-10">
-                  <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider">
-                    لماذا يختار العرسان أوركست؟
+              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto mb-12 max-w-2xl text-center">
+                  <span className="text-xs font-bold tracking-[0.22em] text-[#D7B86A]">
+                    خدمات أوركست
                   </span>
-                  <h3 className="text-2xl sm:text-3xl font-black mt-2">
-                    فخامة النغمة وهيبة الحضور في ليلتك الكبرى
+                  <h3 className="mt-3 text-2xl font-black text-[#C9CDD2] sm:text-4xl">
+                    صوتٌ يليق باللحظة
                   </h3>
+                  <p className="mt-4 text-sm leading-[1.8] text-[#C9CDD2]/60 sm:text-base">
+                    من أول نغمة إلى آخر تفصيل، نصنع تجربة صوتية تحمل اسمك وتبقى في الذاكرة.
+                  </p>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div
-                    className={`p-6 rounded-3xl border transition-all ${isDark ? "bg-[#16161C] border-white/10" : "bg-[#F9F9FB] border-black/10"}`}
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-[#D4AF37]/15 text-[#D4AF37] flex items-center justify-center mb-4">
-                      <Headphones className="w-6 h-6" />
-                    </div>
-                    <h4 className="font-bold text-lg mb-2">تسجيل استوديو ماسترينغ نقي</h4>
-                    <p
-                      className={`text-sm leading-relaxed ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                  {[
+                    {
+                      icon: Headphones,
+                      title: "تسجيل استوديو نقي",
+                      text: "معالجة وماسترينغ احترافيان يقدمان حضوراً واضحاً في القاعة والمنزل.",
+                    },
+                    {
+                      icon: Sparkles,
+                      title: "تخصيص بالأسماء",
+                      text: "نضيف أسماء العروسين وأهلهم ونصوغ التفاصيل بما يناسب مناسبتك.",
+                    },
+                    {
+                      icon: MessageCircle,
+                      title: "طلب مباشر عبر واتساب",
+                      text: "أرسل التفاصيل إلى فريق الاستوديو بخطوات قصيرة وواضحة.",
+                    },
+                  ].map(({ icon: Icon, title, text }) => (
+                    <article
+                      key={title}
+                      className="group rounded-3xl border border-white/10 bg-white/[0.045] p-7 backdrop-blur-md transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/40"
                     >
-                      أعلى مستويات النقاء الصوتي (Lossless Studio Quality) المصممة خصيصاً لمكبرات
-                      صالات الأفراح وقصور الأفراح لضمان عدم وجود أي تشويش.
-                    </p>
-                  </div>
-
-                  <div
-                    className={`p-6 rounded-3xl border transition-all ${isDark ? "bg-[#16161C] border-white/10" : "bg-[#F9F9FB] border-black/10"}`}
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-[#D4AF37]/15 text-[#D4AF37] flex items-center justify-center mb-4">
-                      <Sparkles className="w-6 h-6" />
-                    </div>
-                    <h4 className="font-bold text-lg mb-2">تعديل خاص وحصري بالأسماء</h4>
-                    <p
-                      className={`text-sm leading-relaxed ${isDark ? "text-gray-400" : "text-gray-600"}`}
-                    >
-                      إمكانية إضافة أسماء العروسين وأهلهم، وتعديل الكلمات، وإضافة أبيات شعرية
-                      ترحيبية خاصة بأصوات ألمع منشدي الخليج.
-                    </p>
-                  </div>
-
-                  <div
-                    className={`p-6 rounded-3xl border transition-all ${isDark ? "bg-[#16161C] border-white/10" : "bg-[#F9F9FB] border-black/10"}`}
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-[#25D366]/15 text-[#25D366] flex items-center justify-center mb-4">
-                      <MessageCircle className="w-6 h-6" />
-                    </div>
-                    <h4 className="font-bold text-lg mb-2">طلب مباشر عبر واتساب الاستوديو</h4>
-                    <p
-                      className={`text-sm leading-relaxed ${isDark ? "text-gray-400" : "text-gray-600"}`}
-                    >
-                      بضغطة زر واحدة يتم تجهيز كود العمل ورابطه وتفاصيل طلبك، لتتواصل مع مهندس الصوت
-                      مباشرة وتبدأ التنفيذ دون تعقيدات.
-                    </p>
-                  </div>
+                      <Icon
+                        className="mb-7 h-8 w-8 stroke-[1.5] text-[#D7B86A]"
+                        aria-hidden="true"
+                      />
+                      <h4 className="text-lg font-bold text-[#C9CDD2]">{title}</h4>
+                      <p className="mt-3 text-sm leading-[1.8] text-[#C9CDD2]/60">{text}</p>
+                    </article>
+                  ))}
                 </div>
               </div>
             </section>

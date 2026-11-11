@@ -1,6 +1,6 @@
 import React from "react";
-import { Search, Sparkles, ArrowDown, Moon, Crown, Heart, Flag } from "lucide-react";
-import { AppThemeSettings, ThemeMode, CategoryId } from "../types/index";
+import { ArrowLeft, Crown, Flag, Heart, Moon, Search, Sparkles } from "lucide-react";
+import { AppThemeSettings, CategoryId, ThemeMode } from "../types/index";
 import { getCulturalGreeting, getSeasonalTheme } from "../utils/cultural";
 
 interface HeroProps {
@@ -11,6 +11,7 @@ interface HeroProps {
   selectedCategory: CategoryId;
   onSelectCategory: (cat: CategoryId) => void;
   onExploreClick: () => void;
+  onOrderClick: () => void;
 }
 
 export const Hero: React.FC<HeroProps> = ({
@@ -21,6 +22,7 @@ export const Hero: React.FC<HeroProps> = ({
   selectedCategory,
   onSelectCategory,
   onExploreClick,
+  onOrderClick,
 }) => {
   const isDark = theme === "dark";
   const culturalGreeting = getCulturalGreeting();
@@ -28,14 +30,9 @@ export const Hero: React.FC<HeroProps> = ({
     new Date(),
     themeSettings.forceThemeOverride ? themeSettings.activeTheme : undefined,
   );
-  const SeasonalIcon = {
-    moon: Moon,
-    sparkles: Sparkles,
-    crown: Crown,
-    heart: Heart,
-    flag: Flag,
-  }[seasonalTheme.icon];
-
+  const SeasonalIcon = { moon: Moon, sparkles: Sparkles, crown: Crown, heart: Heart, flag: Flag }[
+    seasonalTheme.icon
+  ];
   const categoryPills: { id: CategoryId; label: string }[] = [
     { id: "all", label: "جميع الأعمال" },
     { id: "zaffat-bride", label: "زفات عروس" },
@@ -45,85 +42,62 @@ export const Hero: React.FC<HeroProps> = ({
   ];
 
   return (
-    <section className="relative overflow-hidden pt-8 pb-14 sm:pt-16 sm:pb-20">
-      {/* Background Decorative Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[300px] bg-o-primary/10 blur-[80px] rounded-full pointer-events-none -z-10" />
+    <section
+      dir="rtl"
+      aria-label="الواجهة الرئيسية"
+      className="relative overflow-hidden py-16 sm:py-24 lg:py-28"
+    >
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_10%,rgba(0,111,136,0.26),transparent_48%)]" />
+      <div className="pointer-events-none absolute -left-24 top-24 -z-10 h-72 w-72 rounded-full bg-[#C9CDD2]/[0.05] blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 bottom-0 -z-10 h-80 w-80 rounded-full bg-[#006F88]/20 blur-3xl" />
 
-      {/* Decorative animated sound wave */}
-      <div
-        className="absolute inset-x-0 top-1/3 -z-10 flex items-center justify-center gap-1.5 h-40 pointer-events-none opacity-35"
-        aria-hidden="true"
-      >
-        {Array.from({ length: 18 }, (_, i) => (
-          <span
-            key={i}
-            className="w-1 sm:w-1.5 rounded-full bg-o-primary/40 animate-[orchest-wave_3.2s_ease-in-out_infinite]"
-            style={{
-              height: `${30 + Math.abs(Math.sin(i * 0.55)) * 70}%`,
-              animationDelay: `${(i % 9) * 0.2}s`,
-            }}
-          />
-        ))}
-      </div>
+      <div className="mx-auto max-w-5xl px-4 text-center sm:px-6">
+        <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#C9CDD2]/15 bg-white/[0.04] px-4 py-2 text-xs font-bold tracking-[0.22em] text-[#C9CDD2] backdrop-blur-md">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#C9CDD2] shadow-[0_0_14px_rgba(201,205,210,0.8)]" />
+          ORCHEST STUDIO
+        </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center">
-        {/* Subtle pill tag */}
-        <div className="inline-flex flex-col items-center gap-1 px-4 py-2 rounded-full border border-o-primary/30 bg-o-primary/10 mb-6 backdrop-blur-md">
-          <div className="flex items-center gap-2 text-o-primary">
-            <SeasonalIcon className="w-4 h-4" aria-hidden="true" />
-            <span className="text-xs sm:text-sm font-bold">
-              {themeSettings.enableTimeGreetings ? culturalGreeting.greeting : seasonalTheme.label}
-            </span>
+        <div className="mx-auto mb-7 flex max-w-max flex-col items-center gap-1 rounded-2xl border border-[#C9CDD2]/10 bg-white/[0.03] px-4 py-2 text-[#C9CDD2] backdrop-blur-md">
+          <div className="flex items-center gap-2 text-xs font-bold sm:text-sm">
+            <SeasonalIcon className="h-4 w-4 text-[#D7B86A]" aria-hidden="true" />
+            {themeSettings.enableTimeGreetings ? culturalGreeting.greeting : seasonalTheme.label}
           </div>
-          <span className="text-[10px] sm:text-xs text-o-muted">
+          <span className="text-[10px] text-[#C9CDD2]/60 sm:text-xs">
             {seasonalTheme.greeting} •{" "}
             {themeSettings.enableTimeGreetings ? culturalGreeting.subtext : seasonalTheme.subtext}
           </span>
         </div>
 
-        {/* Main Title */}
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.25] sm:leading-[1.2] mb-4">
-          اصنع زفافك أو مناسبتك <br className="hidden sm:inline" />
-          <span className="bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] bg-clip-text text-transparent">
-            ببصمة صوتية ملكية لا تُنسى
+        <h1 className="mx-auto max-w-4xl text-4xl font-black leading-[1.25] tracking-tight text-[#C9CDD2] sm:text-6xl lg:text-7xl">
+          اصنع حضورك الصوتي
+          <br />
+          <span className="bg-gradient-to-l from-[#D7B86A] via-[#F2E1A5] to-[#C9CDD2] bg-clip-text text-transparent">
+            ببصمة ملكية لا تُنسى
           </span>
         </h1>
-
-        {/* Subtitle */}
-        <p
-          className={`text-sm sm:text-lg max-w-2xl mx-auto font-medium mb-8 ${isDark ? "text-[#9CA3AF]" : "text-[#6B7280]"}`}
-        >
-          زفات • شيلات • مقطوعات خاصة • تنفيذ حصري حسب الطلب بالأسماء
+        <p className="mx-auto mt-7 max-w-2xl text-sm font-medium leading-[1.8] text-[#C9CDD2]/65 sm:text-lg">
+          زفات وشيلات خليجية تُنفذ بعناية، مع تخصيص الأسماء والتفاصيل التي تجعل مناسبتك تحمل صوتك
+          أنت.
         </p>
 
-        {/* Prominent Search Bar */}
-        <div className="max-w-2xl mx-auto relative mb-6">
-          <div
-            className={`flex items-center gap-3 p-2 rounded-2xl border transition-all duration-300 shadow-xl ${
-              isDark
-                ? "bg-[#16161C] border-white/10 focus-within:border-[#D4AF37]/60 focus-within:shadow-[0_0_25px_rgba(212,175,55,0.25)]"
-                : "bg-white border-black/10 focus-within:border-[#B89728]/60 focus-within:shadow-[0_4px_25px_rgba(184,151,40,0.2)]"
-            }`}
-          >
-            <div className="p-2.5 rounded-xl bg-[#D4AF37]/15 text-[#D4AF37]">
-              <Search className="w-5 h-5" />
+        <div className="mx-auto mt-9 max-w-2xl rounded-2xl border border-white/10 bg-white/[0.04] p-2 shadow-2xl shadow-black/30 backdrop-blur-md focus-within:border-[#D7B86A]/60">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-[#006F88]/30 p-3 text-[#C9CDD2]">
+              <Search className="h-5 w-5" aria-hidden="true" />
             </div>
-
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
+              onChange={(event) => onSearchChange(event.target.value)}
               placeholder="ابحث عن زفة، منشد، أو كلمة مفتاحية..."
               aria-label="ابحث عن زفة أو منشد"
-              className={`w-full bg-transparent text-sm sm:text-base outline-none font-medium ${
-                isDark ? "text-white placeholder-gray-500" : "text-black placeholder-gray-400"
-              }`}
+              className="w-full bg-transparent text-sm font-medium text-[#C9CDD2] outline-none placeholder:text-[#C9CDD2]/35 sm:text-base"
             />
-
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => onSearchChange("")}
-                className="px-3 py-1 text-xs text-gray-400 hover:text-white"
+                className="px-3 py-1 text-xs text-[#C9CDD2]/55 hover:text-[#C9CDD2]"
               >
                 مسح
               </button>
@@ -131,20 +105,18 @@ export const Hero: React.FC<HeroProps> = ({
           </div>
         </div>
 
-        {/* Swipeable Category Pills */}
-        <div className="flex items-center justify-center gap-2 overflow-x-auto py-2 no-scrollbar px-2 max-w-3xl mx-auto mb-8">
+        <div className="no-scrollbar mx-auto mt-5 flex max-w-3xl items-center justify-center gap-2 overflow-x-auto px-2 py-2">
           {categoryPills.map((pill) => {
-            const isSelected = selectedCategory === pill.id;
+            const selected = selectedCategory === pill.id;
             return (
               <button
+                type="button"
                 key={pill.id}
                 onClick={() => onSelectCategory(pill.id)}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                  isSelected
-                    ? "bg-[#D4AF37] text-black shadow-md shadow-[#D4AF37]/25"
-                    : isDark
-                      ? "bg-[#16161C] border border-white/10 text-gray-300 hover:border-[#D4AF37]/40"
-                      : "bg-white border border-black/10 text-gray-700 hover:border-[#B89728]/40 shadow-sm"
+                className={`whitespace-nowrap rounded-xl px-4 py-2 text-xs font-semibold transition sm:text-sm ${
+                  selected
+                    ? "bg-[#006F88] text-[#C9CDD2] shadow-lg shadow-[#006F88]/30"
+                    : "border border-white/10 bg-white/[0.04] text-[#C9CDD2]/70 hover:border-[#D7B86A]/60 hover:text-[#C9CDD2]"
                 }`}
               >
                 {pill.label}
@@ -153,14 +125,21 @@ export const Hero: React.FC<HeroProps> = ({
           })}
         </div>
 
-        {/* Hero CTA Button */}
-        <div className="flex items-center justify-center gap-4">
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <button
-            onClick={onExploreClick}
-            className="flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 cursor-pointer bg-gradient-to-r from-[#D4AF37] to-[#F3E5AB] text-black shadow-lg shadow-[#D4AF37]/20 hover:shadow-[0_0_25px_rgba(212,175,55,0.4)] active:scale-95"
+            type="button"
+            onClick={onOrderClick}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#006F88] px-6 py-3 font-bold text-[#C9CDD2] shadow-lg shadow-[#006F88]/25 transition hover:border hover:border-[#D7B86A] hover:shadow-[0_0_28px_rgba(215,184,106,0.28)] active:scale-[0.98]"
           >
-            <span>استعرض الأعمال المميزة</span>
-            <ArrowDown className="w-4 h-4" />
+            اطلب عملك الخاص
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={onExploreClick}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-3 font-bold text-[#C9CDD2] backdrop-blur-md transition hover:border-[#D7B86A]/60 hover:bg-white/10"
+          >
+            استكشف الكتالوج
           </button>
         </div>
       </div>
